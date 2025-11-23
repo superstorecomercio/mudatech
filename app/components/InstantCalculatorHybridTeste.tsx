@@ -246,7 +246,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       }, 500)
 
       setTimeout(() => {
-        addBotMessage("Vou calcular o valor da sua mudança agora — e o melhor: (o preço aparece na hora, em poucos segundos.)")
+        addBotMessage("Vou calcular o valor da sua mudança agora — e o melhor: (o preço aparece na hora, em poucos segundos.) No final, também te mostro quais empresas estão disponíveis para seu trajeto.")
       }, 2000)
 
       setTimeout(() => {

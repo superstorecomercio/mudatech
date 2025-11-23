@@ -95,3 +95,4 @@ class Logger {
 
 // Instância singleton
 export const logger = new Logger();
+

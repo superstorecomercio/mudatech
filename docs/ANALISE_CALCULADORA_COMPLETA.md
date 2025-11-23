@@ -638,3 +638,4 @@ resultadoFinal (estado)
 **Pronto para receber o novo layout!** 🎨
 
 
+
