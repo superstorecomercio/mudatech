@@ -492,22 +492,28 @@ export async function POST(request: NextRequest) {
         campanhasVinculadas: orcamentoSalvo.hotsitesIds?.length || 0,
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('api-calculadora', '❌ ERRO ao salvar orçamento no banco', error instanceof Error ? error : new Error(String(error)), {
         nome: body.nome,
         email: body.email,
         origem: body.origem,
         destino: body.destino,
+        errorMessage,
       });
-      // ⚠️ IMPORTANTE: Não falha a requisição se o salvamento falhar
-      // O usuário ainda recebe o orçamento calculado
-      // Mas o erro é logado para debug
+
+      // Retornar erro específico para o cliente poder ver
+      return NextResponse.json(
+        { error: `Erro ao salvar orçamento: ${errorMessage}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(resultado);
   } catch (error) {
-    logger.error('api-calculadora', 'Erro ao processar cálculo de orçamento', error instanceof Error ? error : new Error(String(error)));
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('api-calculadora', 'Erro ao processar cálculo de orçamento', error instanceof Error ? error : new Error(String(error)), { errorMessage });
     return NextResponse.json(
-      { error: 'Erro ao processar sua solicitação. Por favor, tente novamente.' },
+      { error: `Erro ao processar sua solicitação: ${errorMessage}` },
       { status: 500 }
     );
   }

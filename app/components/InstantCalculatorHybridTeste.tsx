@@ -701,8 +701,14 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
-        throw new Error(errorData.error || "Erro ao calcular orçamento")
+        let errorMessage = `Erro ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Se não conseguir parsear JSON, usa a mensagem padrão
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

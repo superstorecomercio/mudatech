@@ -127,7 +127,9 @@ export const criarOrcamentoENotificar = async (
       hint: error.hint,
       code: error.code,
     });
-    throw error;
+    // Cria um erro mais descritivo
+    const errorMessage = `Erro ao salvar orçamento: ${error.message}${error.hint ? ` (${error.hint})` : ''}`;
+    throw new Error(errorMessage);
   }
   
   if (!data || data.length === 0) {
