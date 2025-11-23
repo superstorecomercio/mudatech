@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Evita problemas com trailing slashes nas APIs
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {

@@ -4,6 +4,9 @@ import { criarOrcamentoENotificar } from '@/lib/db/queries/orcamentos';
 import { logger } from '@/lib/utils/logger';
 import { checkRateLimit, recordAttempt, getIdentifier, checkDuplicateOrcamento } from '@/lib/utils/rateLimiter';
 
+// Garante que a rota seja dinâmica (não cacheada)
+export const dynamic = 'force-dynamic';
+
 type TipoImovel = 'kitnet' | '1_quarto' | '2_quartos' | '3_mais' | 'comercial';
 
 interface CalculoRequest {
@@ -517,5 +520,19 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Handler OPTIONS para preflight requests (CORS)
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }
 
