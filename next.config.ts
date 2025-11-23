@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Define o root do Turbopack para o diretório do projeto
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {

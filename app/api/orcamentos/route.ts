@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
       temElevador: false, // Formulário simples não tem essa info
       andar: 0, // Formulário simples não tem essa info
       precisaEmbalagem: formData.precisaEmbalagem || false,
-      listaObjetos: listaObjetos || null,
+      listaObjetos: listaObjetos || undefined,
       dataEstimada: formData.dataEstimada || new Date().toISOString().split('T')[0],
       origemFormulario: 'formulario_simples',
       userAgent: userAgent,
-      ipCliente: ip,
+      ipCliente: ip || undefined,
     };
 
     console.log('🚀 [API Orçamentos] Chamando criarOrcamentoENotificar...');

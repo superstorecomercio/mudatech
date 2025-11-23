@@ -289,6 +289,8 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
         data_inicio: new Date().toISOString().split('T')[0],
         data_fim: '',
         valor_total: 0,
+        participa_cotacao: true,
+        limite_orcamentos_mes: null,
       });
       router.refresh();
     } catch (error: any) {

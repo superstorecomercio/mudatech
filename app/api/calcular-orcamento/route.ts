@@ -331,9 +331,9 @@ export async function POST(request: NextRequest) {
     const body: CalculoRequest = await request.json();
 
     // ⚠️ PROTEÇÃO ANTI-SPAM: Verificar rate limiting ANTES de processar
-    let identifier: string;
+    let identifier: string = 'unknown';
     let rateLimitCheck: { allowed: boolean; reason?: string; retryAfter?: number };
-    
+
     try {
       identifier = getIdentifier(request, body.email);
       rateLimitCheck = checkRateLimit(identifier);
