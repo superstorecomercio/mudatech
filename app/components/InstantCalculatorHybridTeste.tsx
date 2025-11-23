@@ -211,50 +211,30 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
   const etapaContatoAtualData = etapaContatoAtual >= 0 ? etapasContato[etapaContatoAtual] : null
 
   const scrollToBottom = () => {
-    // Usa requestAnimationFrame para garantir que o DOM foi atualizado
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const isMobile = window.innerWidth < 768
-
-        // Primeiro: scroll interno do container de mensagens
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-        }
-
-        // Segundo: garantir que messagesEndRef está visível
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-            inline: "nearest"
-          })
-        }
-
-        // No mobile, scroll adicional da página
-        if (isMobile) {
-          setTimeout(() => {
-            // Scroll da página para garantir visibilidade total
-            window.scrollTo({
-              top: document.documentElement.scrollHeight,
-              behavior: "smooth"
-            })
-          }, 200)
-        }
-      }, 100)
-    })
+    // Scroll simples e direto - apenas scroll interno do container
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      })
+    }
   }
 
-  // Autoscroll quando mensagens mudam, isTyping ou loading mudam
+  // Scroll apenas quando uma nova mensagem é adicionada (não quando isTyping muda)
+  const lastMessageCountRef = useRef(0)
+
   useEffect(() => {
-    if (messages.length > 0 || isTyping || loading) {
+    // Só faz scroll quando o número de mensagens aumenta (nova mensagem adicionada)
+    if (messages.length > lastMessageCountRef.current) {
+      lastMessageCountRef.current = messages.length
       // Delay para garantir que o DOM foi atualizado
       const timer = setTimeout(() => {
         scrollToBottom()
-      }, 150)
+      }, 100)
       return () => clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isTyping, loading])
+  }, [messages.length])
 
   // Inicialização com mensagens de boas-vindas
   useEffect(() => {
@@ -785,6 +765,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
     // Reset das refs para permitir que as mensagens iniciais sejam adicionadas novamente
     introExecutadoRef.current = false
     previewExecutadoRef.current = false
+    lastMessageCountRef.current = 0
   }
 
   // ESTADO: Formulário Inicial (Conversacional)
