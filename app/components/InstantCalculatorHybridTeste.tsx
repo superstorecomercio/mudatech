@@ -184,6 +184,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
   const [showIntro, setShowIntro] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputAreaRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const [contatoData, setContatoData] = useState<ContatoData>({
     nome: "",
@@ -215,28 +216,29 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       setTimeout(() => {
         const isMobile = window.innerWidth < 768
 
-        if (isMobile && inputAreaRef.current) {
-          // No mobile, faz scroll direto para a área de input
-          inputAreaRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-            inline: "nearest"
-          })
+        // Primeiro: scroll interno do container de mensagens
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+        }
 
-          // Scroll extra da página para garantir visibilidade total
-          setTimeout(() => {
-            window.scrollTo({
-              top: document.documentElement.scrollHeight,
-              behavior: "smooth"
-            })
-          }, 200)
-        } else if (messagesEndRef.current) {
-          // No desktop, scroll para o final das mensagens
+        // Segundo: garantir que messagesEndRef está visível
+        if (messagesEndRef.current) {
           messagesEndRef.current.scrollIntoView({
             behavior: "smooth",
             block: "end",
             inline: "nearest"
           })
+        }
+
+        // No mobile, scroll adicional da página
+        if (isMobile) {
+          setTimeout(() => {
+            // Scroll da página para garantir visibilidade total
+            window.scrollTo({
+              top: document.documentElement.scrollHeight,
+              behavior: "smooth"
+            })
+          }, 200)
         }
       }, 100)
     })
@@ -793,7 +795,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       <Card className="max-w-3xl mx-auto bg-card/80 backdrop-blur-sm border-2 shadow-2xl font-[family-name:var(--font-montserrat)]">
         <div className="flex flex-col max-h-[80vh] lg:max-h-[600px]">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -982,7 +984,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       <Card className="max-w-3xl mx-auto bg-card/80 backdrop-blur-sm border-2 shadow-2xl font-[family-name:var(--font-montserrat)]">
         <div className="flex flex-col max-h-[80vh] lg:max-h-[600px]">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -1115,7 +1117,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       <Card className="max-w-3xl mx-auto bg-card/80 backdrop-blur-sm border-2 shadow-2xl font-[family-name:var(--font-montserrat)]">
         <div className="flex flex-col max-h-[80vh] lg:max-h-[600px]">
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6 space-y-3 md:space-y-4 min-h-0">
             {messages.map((message) => (
               <div
                 key={message.id}
