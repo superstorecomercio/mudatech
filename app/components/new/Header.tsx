@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/app/components/ui/button"
 import { Menu, X } from "lucide-react"
 
@@ -14,14 +13,14 @@ export function Header() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <Link href="/" className="flex items-center group">
-            <Image
-              src="/logo.png"
-              alt="Guia de Mudanças"
-              width={200}
-              height={40}
-              className="h-8 lg:h-10 w-auto transition-transform group-hover:scale-105"
-              priority
-            />
+            <div className="text-2xl lg:text-3xl font-bold tracking-tight transition-transform group-hover:scale-105">
+              <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                Muda
+              </span>
+              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                Tech
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

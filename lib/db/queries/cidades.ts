@@ -105,12 +105,52 @@ export const getCidadeBySlug = async (slug: string): Promise<City | null> => {
   try {
     const supabase = createServerClient();
     
-    // 1. Buscar cidade na tabela cidades pelo slug
-    const { data: cidade, error: cidadeError } = await supabase
+    // 1. Tentar buscar cidade na tabela cidades pelo slug exato
+    let { data: cidade, error: cidadeError } = await supabase
       .from('cidades')
       .select('*')
       .eq('slug', slug)
       .single();
+    
+    // 2. Se não encontrou, tentar extrair o nome da cidade do slug e buscar novamente
+    // Ex: "sao-paulo-sp" -> tenta "sao-paulo"
+    if (cidadeError || !cidade) {
+      // Remove o sufixo do estado se existir (últimos 3 caracteres: "-sp", "-rj", etc)
+      const slugSemEstado = slug.replace(/-[a-z]{2}$/, '');
+      
+      if (slugSemEstado !== slug) {
+        const { data: cidadeAlt, error: cidadeAltError } = await supabase
+          .from('cidades')
+          .select('*')
+          .eq('slug', slugSemEstado)
+          .single();
+        
+        if (!cidadeAltError && cidadeAlt) {
+          cidade = cidadeAlt;
+          cidadeError = null;
+        }
+      }
+    }
+    
+    // 3. Se ainda não encontrou, tentar buscar pelo nome normalizado
+    if (cidadeError || !cidade) {
+      // Tenta buscar por qualquer slug que contenha o nome da cidade
+      const slugParts = slug.split('-');
+      if (slugParts.length > 1) {
+        // Remove a última parte (estado) e tenta buscar
+        const nomeCidade = slugParts.slice(0, -1).join('-');
+        const { data: cidadeAlt, error: cidadeAltError } = await supabase
+          .from('cidades')
+          .select('*')
+          .eq('slug', nomeCidade)
+          .single();
+        
+        if (!cidadeAltError && cidadeAlt) {
+          cidade = cidadeAlt;
+          cidadeError = null;
+        }
+      }
+    }
     
     if (cidadeError || !cidade) {
       console.error('Cidade não encontrada:', slug);

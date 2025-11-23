@@ -31,8 +31,13 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="text-2xl font-bold text-[#003366]">
-              Guia de Mudanças
+            <div className="text-2xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                Muda
+              </span>
+              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                Tech
+              </span>
             </div>
           </Link>
 

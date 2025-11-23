@@ -182,3 +182,40 @@ html {
   /* Updated hover color to match new primary orange */
   background: oklch(0.703 0.156 37.82);
 }
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Custom date picker styling */
+input[type="date"].date-picker-custom {
+  color-scheme: light;
+}
+
+input[type="date"].date-picker-custom::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  filter: invert(0.5);
+  padding: 4px;
+  margin-right: 4px;
+}
+
+input[type="date"].date-picker-custom::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="date"].date-picker-custom::-webkit-datetime-edit-text {
+  color: oklch(0.553 0.016 268.9);
+}
+
+input[type="date"].date-picker-custom::-webkit-datetime-edit-month-field,
+input[type="date"].date-picker-custom::-webkit-datetime-edit-day-field,
+input[type="date"].date-picker-custom::-webkit-datetime-edit-year-field {
+  color: oklch(0.242 0.025 268.9);
+}

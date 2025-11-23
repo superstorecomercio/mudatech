@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
@@ -13,7 +12,14 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-6">
             <Link href="/" className="inline-block">
-              <Image src="/logo.png" alt="Guia de Mudanças" width={180} height={36} className="h-9 w-auto" />
+              <div className="text-2xl font-bold tracking-tight">
+                <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                  Muda
+                </span>
+                <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+                  Tech
+                </span>
+              </div>
             </Link>
             <p className="text-sm leading-relaxed">
               Conectamos você às melhores empresas de mudança do Brasil. Orçamentos gratuitos e serviço confiável.
@@ -169,7 +175,7 @@ export function Footer() {
       <div className="border-t border-gray-800">
         <div className="container mx-auto px-4 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p>© {new Date().getFullYear()} Guia de Mudanças. Todos os direitos reservados.</p>
+            <p>© {new Date().getFullYear()} MudaTech. Todos os direitos reservados.</p>
             <div className="flex gap-6">
               <Link href="#" className="hover:text-white transition-colors">
                 Termos de Uso

@@ -159,18 +159,38 @@ DADOS DA MUDANÇA:
      * Ex: São Paulo → Porto Alegre = ~1.100 km
      * Ex: São Paulo → Salvador = ~1.960 km
 
-3. **CÁLCULO DE PREÇO:**
-   - Considere: distância, volume, acesso, embalagem, mão de obra, combustível, pedágios
-   - Faixa deve ter mínimo 25% de diferença entre min e max
-   - Valores realistas para mercado brasileiro 2024/2025
-   - Embalagem profissional: +R$ 500-1.000 dependendo do porte
-   - Sem elevador em andares altos: +R$ 200-400
-   - Mudanças interestaduais: custos de pedágio, pernoite, logística
+3. **CÁLCULO DE PREÇO - CONSIDERE TODOS OS CUSTOS:**
+   
+   **CUSTOS BASE POR TIPO DE IMÓVEL (mão de obra + veículo):**
+   - Kitnet: R$ 800-1.200 (2 pessoas, veículo pequeno)
+   - 1 quarto: R$ 1.200-1.800 (2-3 pessoas, veículo médio)
+   - 2 quartos: R$ 1.800-2.500 (3-4 pessoas, veículo médio/grande)
+   - 3+ quartos/Casa: R$ 2.500-4.000 (4+ pessoas, veículo grande)
+   - Comercial: R$ 2.000-5.000+ (depende do volume)
+   
+   **CUSTOS ADICIONAIS:**
+   - Combustível: R$ 0,80-1,20 por km (ida e volta = 2x a distância)
+   - Pedágios: R$ 50-200 dependendo da rota (interestadual)
+   - Embalagem profissional completa: +R$ 800-2.000 (papelão, plástico bolha, caixas, mão de obra)
+   - Desmontagem/Remontagem: +R$ 300-800 (móveis, eletrodomésticos)
+   - Sem elevador (3º andar+): +R$ 300-600 (esforço físico extra)
+   - Sem elevador (5º andar+): +R$ 500-1.000 (risco e dificuldade)
+   - Seguro de carga: +R$ 200-500 (recomendado para mudanças de valor)
+   - Pernoite (mudanças >600km): +R$ 400-800 (diárias, alimentação)
+   - Margem de lucro empresa: 20-30% sobre custos totais
+   
+   **REGRAS IMPORTANTES:**
+   - Faixa deve ter mínimo 30% de diferença entre min e max
+   - Valores devem refletir mercado brasileiro 2024/2025 (inflação, combustível caro)
+   - Mudanças interestaduais: SEMPRE incluir custos de logística, pedágios e possíveis pernoites
+   - Preços muito baixos indicam empresa não profissional ou sem seguro
 
-4. **EXEMPLOS DE REFERÊNCIA:**
-   - Mesma cidade (12 km, kitnet, com elevador): R$ 600 - R$ 850
-   - Mesma cidade (12 km, 2 quartos, sem elevador 3º andar): R$ 900 - R$ 1.300
-   - Interestadual (430 km, 2 quartos, com elevador, com embalagem): R$ 2.800 - R$ 3.900
+4. **EXEMPLOS DE REFERÊNCIA REALISTAS (2024/2025):**
+   - Mesma cidade (12 km, kitnet, com elevador, sem embalagem): R$ 1.200 - R$ 1.600
+   - Mesma cidade (12 km, 2 quartos, sem elevador 3º andar, sem embalagem): R$ 1.800 - R$ 2.500
+   - Mesma cidade (12 km, 2 quartos, com elevador, COM embalagem completa): R$ 2.800 - R$ 3.800
+   - Interestadual (430 km, 2 quartos, com elevador, com embalagem): R$ 4.500 - R$ 6.500
+   - Interestadual (1.100 km, 3+ quartos, sem elevador 4º andar, com embalagem): R$ 8.000 - R$ 12.000
 
 Retorne APENAS um JSON válido neste formato exato:
 {
@@ -209,8 +229,8 @@ EXEMPLO DE RESPOSTA CORRETA:
         },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.5, // Temperatura moderada para equilibrar precisão e flexibilidade
-      max_tokens: 500, // Mais tokens para raciocinar melhor
+      temperature: 0.3, // Temperatura mais baixa para maior consistência e preços mais realistas
+      max_tokens: 600, // Mais tokens para considerar todos os fatores
       response_format: { type: 'json_object' },
     });
 
@@ -223,7 +243,57 @@ EXEMPLO DE RESPOSTA CORRETA:
     const resultado = JSON.parse(resposta);
     logger.info('api-calculadora', '✅ IA calculou orçamento completo', resultado);
 
+    // Validação e ajuste de preços mínimos realistas
     const distanciaKm = resultado.distanciaKm || 0;
+    
+    // Calcular preço mínimo baseado em distância e tipo
+    const precosMinimosBase: Record<TipoImovel, number> = {
+      kitnet: 1000,
+      '1_quarto': 1400,
+      '2_quartos': 1800,
+      '3_mais': 2500,
+      comercial: 2000,
+    };
+    
+    const precoMinimoBase = precosMinimosBase[params.tipoImovel] || 1500;
+    
+    // Adicionar custos por distância (combustível ida e volta)
+    const custoCombustivel = distanciaKm * 2 * 1.0; // R$ 1,00 por km (ida e volta)
+    
+    // Adicionar custos adicionais
+    let custosAdicionais = 0;
+    if (params.precisaEmbalagem === 'sim') {
+      custosAdicionais += 1000; // Embalagem profissional
+    }
+    if (params.temElevador === 'nao' && params.andar >= 3) {
+      custosAdicionais += params.andar >= 5 ? 600 : 400; // Sem elevador
+    }
+    if (distanciaKm > 600) {
+      custosAdicionais += 600; // Pernoite para mudanças longas
+    }
+    if (distanciaKm > 100) {
+      custosAdicionais += 150; // Pedágios estimados
+    }
+    
+    // Preço mínimo realista = base + combustível + adicionais + margem (20%)
+    const precoMinimoCalculado = Math.round((precoMinimoBase + custoCombustivel + custosAdicionais) * 1.2);
+    
+    // Garantir que os preços retornados pela IA não sejam muito baixos
+    if (resultado.precoMin < precoMinimoCalculado * 0.8) {
+      logger.warn('api-calculadora', '⚠️ Preço mínimo muito baixo detectado. Ajustando...', {
+        precoMinOriginal: resultado.precoMin,
+        precoMinimoCalculado,
+        ajuste: 'aplicado'
+      });
+      resultado.precoMin = Math.round(precoMinimoCalculado * 0.9); // 90% do mínimo calculado
+    }
+    
+    // Garantir que precoMax seja pelo menos 30% maior que precoMin
+    const diferencaMinima = resultado.precoMin * 0.3;
+    if (resultado.precoMax < resultado.precoMin + diferencaMinima) {
+      resultado.precoMax = Math.round(resultado.precoMin + diferencaMinima);
+    }
+    
     const distanciaTexto =
       distanciaKm >= 500
         ? `aproximadamente ${distanciaKm} km (mudança interestadual)`

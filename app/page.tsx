@@ -1,7 +1,6 @@
 import { HeroSection } from "@/app/components/new/HeroSection"
-import { SmartSearch } from "@/app/components/SmartSearch"
 import Link from "next/link"
-import { MapPin, TrendingUp } from "lucide-react"
+import { MapPin, TrendingUp, Calculator, Building2 } from "lucide-react"
 
 export default function Home() {
   const cidadesPopulares = [
@@ -52,10 +51,72 @@ export default function Home() {
       <main>
         <HeroSection />
         
-        {/* Smart Search com IA - Única Seção Principal */}
+        {/* Botões de Ação Principal */}
         <section className="py-8 md:py-12 px-4 bg-gradient-to-br from-blue-50 via-white to-green-50">
           <div className="max-w-4xl mx-auto">
-            <SmartSearch />
+            <div className="text-center space-y-6">
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight leading-tight">
+                  Calcule o preço da sua mudança{" "}
+                  <span className="text-primary">em segundos</span>
+                </h1>
+                <div className="flex items-center justify-center gap-6 text-lg font-medium text-muted-foreground">
+                  <span className="flex items-center gap-2">
+                    <span className="text-accent">✓</span>
+                    Grátis
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-accent">✓</span>
+                    Rápido
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-accent">✓</span>
+                    Sem Cadastro
+                  </span>
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <Link
+                  href="/calculadorateste"
+                  className="group relative p-8 bg-white border-2 border-primary rounded-2xl hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-primary/5 to-primary/10"
+                >
+                  <div className="flex items-start gap-4 text-left">
+                    <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <Calculator className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-foreground mb-2">
+                        CALCULADORA INSTANTÂNEA
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Calcule o preço da sua mudança em segundos
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/cidades/sao-paulo-sp"
+                  className="group relative p-8 bg-white border-2 border-border rounded-2xl hover:shadow-xl transition-all duration-300 hover:border-primary"
+                >
+                  <div className="flex items-start gap-4 text-left">
+                    <div className="p-3 bg-accent/10 rounded-xl group-hover:bg-accent/20 transition-colors">
+                      <Building2 className="w-8 h-8 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-foreground mb-2">
+                        Ver empresas de mudanças
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Encontre as melhores empresas da sua região
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 
