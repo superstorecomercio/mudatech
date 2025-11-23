@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 interface LogEntry {
@@ -16,22 +13,10 @@ interface LogEntry {
 }
 
 class Logger {
-  private logsDir: string;
-  private maxLogFiles: number = 7; // Manter logs dos últimos 7 dias
+  private isProduction: boolean;
 
   constructor() {
-    // Criar diretório de logs na raiz do projeto
-    this.logsDir = path.join(process.cwd(), 'logs');
-    
-    // Criar diretório se não existir
-    if (!fs.existsSync(this.logsDir)) {
-      fs.mkdirSync(this.logsDir, { recursive: true });
-    }
-  }
-
-  private getLogFileName(type: string): string {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    return path.join(this.logsDir, `${type}-${today}.log`);
+    this.isProduction = process.env.NODE_ENV === 'production';
   }
 
   private formatLogEntry(entry: LogEntry): string {
@@ -40,39 +25,38 @@ class Logger {
     let logLine = `[${timestamp}] [${level}] ${entry.message}`;
 
     if (entry.data) {
-      logLine += `\n  Data: ${JSON.stringify(entry.data, null, 2)}`;
+      logLine += ` | Data: ${JSON.stringify(entry.data)}`;
     }
 
     if (entry.error) {
-      logLine += `\n  Error: ${entry.error.message}`;
-      if (entry.error.stack) {
-        logLine += `\n  Stack: ${entry.error.stack}`;
-      }
-      if (entry.error.name) {
-        logLine += `\n  Name: ${entry.error.name}`;
+      logLine += ` | Error: ${entry.error.message}`;
+      if (entry.error.stack && !this.isProduction) {
+        logLine += ` | Stack: ${entry.error.stack}`;
       }
     }
 
-    return logLine + '\n';
+    return logLine;
   }
 
-  private writeLog(type: string, entry: LogEntry): void {
-    try {
-      const logFile = this.getLogFileName(type);
-      const logLine = this.formatLogEntry(entry);
-      
-      // Escrever no arquivo (append)
-      fs.appendFileSync(logFile, logLine, 'utf8');
-      
-      // Também escrever no console (manter compatibilidade)
-      const consoleMethod = entry.level === 'error' ? console.error : 
-                           entry.level === 'warn' ? console.warn : 
-                           console.log;
-      consoleMethod(logLine.trim());
-    } catch (error) {
-      // Se falhar ao escrever no arquivo, pelo menos logar no console
-      console.error('Erro ao escrever log em arquivo:', error);
-      console.log(this.formatLogEntry(entry).trim());
+  private writeLog(entry: LogEntry): void {
+    const logLine = this.formatLogEntry(entry);
+
+    // Em produção (Vercel), apenas usar console
+    // Os logs aparecem no Vercel Dashboard > Logs
+    switch (entry.level) {
+      case 'error':
+        console.error(logLine);
+        break;
+      case 'warn':
+        console.warn(logLine);
+        break;
+      case 'debug':
+        if (!this.isProduction) {
+          console.debug(logLine);
+        }
+        break;
+      default:
+        console.log(logLine);
     }
   }
 
@@ -91,52 +75,23 @@ class Logger {
   }
 
   info(type: string, message: string, data?: any): void {
-    this.writeLog(type, this.createLogEntry('info', message, data));
+    this.writeLog(this.createLogEntry('info', `[${type}] ${message}`, data));
   }
 
   warn(type: string, message: string, data?: any): void {
-    this.writeLog(type, this.createLogEntry('warn', message, data));
+    this.writeLog(this.createLogEntry('warn', `[${type}] ${message}`, data));
   }
 
   error(type: string, message: string, error?: Error, data?: any): void {
-    this.writeLog(type, this.createLogEntry('error', message, data, error));
+    this.writeLog(this.createLogEntry('error', `[${type}] ${message}`, data, error));
   }
 
   debug(type: string, message: string, data?: any): void {
-    if (process.env.NODE_ENV === 'development') {
-      this.writeLog(type, this.createLogEntry('debug', message, data));
-    }
-  }
-
-  // Limpar logs antigos (manter apenas últimos N dias)
-  cleanupOldLogs(): void {
-    try {
-      const files = fs.readdirSync(this.logsDir);
-      const today = new Date();
-      
-      files.forEach(file => {
-        const filePath = path.join(this.logsDir, file);
-        const stats = fs.statSync(filePath);
-        const fileDate = new Date(stats.mtime);
-        const daysDiff = Math.floor((today.getTime() - fileDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (daysDiff > this.maxLogFiles) {
-          fs.unlinkSync(filePath);
-          console.log(`🗑️ Log antigo removido: ${file}`);
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao limpar logs antigos:', error);
+    if (!this.isProduction) {
+      this.writeLog(this.createLogEntry('debug', `[${type}] ${message}`, data));
     }
   }
 }
 
 // Instância singleton
 export const logger = new Logger();
-
-// Limpar logs antigos ao iniciar (apenas em produção)
-if (process.env.NODE_ENV === 'production') {
-  logger.cleanupOldLogs();
-}
-
-
