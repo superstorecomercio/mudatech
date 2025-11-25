@@ -119,107 +119,75 @@ async function calcularOrcamentoComIA(params: CalculoRequest): Promise<CalculoRe
       comercial: 'mudança comercial (escritório, loja, etc.)',
     };
 
-    const prompt = `Você é um especialista em orçamentos de mudanças residenciais no Brasil com amplo conhecimento do mercado atual e geografia brasileira.
-
-Analise os dados abaixo e retorne:
-1. A distância REAL em km entre origem e destino (use seu conhecimento geográfico)
-2. Uma estimativa de preço REALISTA baseada no mercado brasileiro atual
+    const prompt = `Você é um especialista em orçamentos de mudanças residenciais no Brasil com 20 anos de experiência. Use o modelo de CUSTO BASE + ADICIONAIS (NÃO calcule "preço por km").
 
 DADOS DA MUDANÇA:
-- Origem digitada pelo usuário: "${params.origem}"
-- Destino digitado pelo usuário: "${params.destino}"
-- Tipo de imóvel: ${tiposImovelLabels[params.tipoImovel]}
-- Tem elevador na origem/destino: ${params.temElevador === 'sim' ? 'Sim' : 'Não'}
+- Origem: "${params.origem}"
+- Destino: "${params.destino}"
+- Tipo: ${tiposImovelLabels[params.tipoImovel]}
+- Elevador: ${params.temElevador === 'sim' ? 'Sim' : 'Não'}
 - Andar: ${params.andar}º
-- Precisa de embalagem e desmontagem completa: ${params.precisaEmbalagem === 'sim' ? 'Sim' : 'Não'}
+- Embalagem: ${params.precisaEmbalagem === 'sim' ? 'Sim' : 'Não'}
 
-⚠️ INSTRUÇÕES CRÍTICAS PARA INTERPRETAR LOCALIDADES:
+METODOLOGIA DE CÁLCULO:
 
-1. **CORRIJA ERROS DE DIGITAÇÃO E INTERPRETE O CONTEXTO:**
-   - "MOEM" = Moema (bairro de São Paulo, SP)
-   - "Santana SP" = Santana (bairro de São Paulo, SP)
-   - "SP" = São Paulo, SP (capital)
-   - "RJ" = Rio de Janeiro, RJ (capital)
-   - "BH" = Belo Horizonte, MG
-   - Se ambos têm "SP", provavelmente são da mesma cidade/região
-   - Se menciona bairro, procure a cidade correspondente
-   - Tolere variações de escrita (acentos, maiúsculas, abreviações)
+PASSO 1 - CUSTO BASE (não varia com distância):
+- Kitnet: R$ 1.000-1.500
+- 1 quarto: R$ 1.400-2.000
+- 2 quartos: R$ 1.800-2.800
+- 3+ quartos: R$ 2.500-4.000
+- Comercial: R$ 3.000-6.000
 
-2. **IDENTIFIQUE O TIPO DE MUDANÇA:**
-   - **Mesma cidade (bairros diferentes)**: 5-25 km
-     * Ex: Moema → Santana (São Paulo) = ~12 km
-     * Ex: Copacabana → Tijuca (Rio de Janeiro) = ~15 km
-   - **Mesma região metropolitana**: 30-80 km
-     * Ex: São Paulo → Guarulhos = ~25 km
-     * Ex: São Paulo → Santo André = ~30 km
-   - **Mesmo estado (cidades diferentes)**: 80-400 km
-     * Ex: São Paulo → Campinas = ~100 km
-     * Ex: São Paulo → Santos = ~80 km
-   - **Estados próximos**: 400-800 km
-     * Ex: São Paulo → Curitiba = ~400 km
-     * Ex: São Paulo → Rio de Janeiro = ~430 km
-   - **Interestadual longa distância**: 800+ km
-     * Ex: São Paulo → Porto Alegre = ~1.100 km
-     * Ex: São Paulo → Salvador = ~1.960 km
+PASSO 2 - CUSTOS VARIÁVEIS:
+A) Combustível: distância × 2 (ida+volta) × R$ 1,00/km
+B) Pedágios:
+   - Mesma cidade: R$ 0
+   - Até 100km: R$ 30-50
+   - 100-400km: R$ 80-150
+   - 400-800km: R$ 150-250
+   - >800km: R$ 250-400
+C) Embalagem (se sim):
+   - Kitnet: +R$ 500
+   - 1 quarto: +R$ 700
+   - 2 quartos: +R$ 1.000
+   - 3+ quartos: +R$ 1.500
+   - Comercial: +R$ 2.000
+D) Sem elevador (se não):
+   - Até 2º andar: R$ 0
+   - 3º-5º andar: +R$ 400
+   - 6º+ andar: +R$ 700
+E) Pernoite (se >700km): +R$ 500-1.000
+F) Margem final: × 1,25 (25%)
 
-3. **CÁLCULO DE PREÇO - CONSIDERE TODOS OS CUSTOS:**
-   
-   **CUSTOS BASE POR TIPO DE IMÓVEL (mão de obra + veículo):**
-   - Kitnet: R$ 800-1.200 (2 pessoas, veículo pequeno)
-   - 1 quarto: R$ 1.200-1.800 (2-3 pessoas, veículo médio)
-   - 2 quartos: R$ 1.800-2.500 (3-4 pessoas, veículo médio/grande)
-   - 3+ quartos/Casa: R$ 2.500-4.000 (4+ pessoas, veículo grande)
-   - Comercial: R$ 2.000-5.000+ (depende do volume)
-   
-   **CUSTOS ADICIONAIS:**
-   - Combustível: R$ 0,80-1,20 por km (ida e volta = 2x a distância)
-   - Pedágios: R$ 50-200 dependendo da rota (interestadual)
-   - Embalagem profissional completa: +R$ 800-2.000 (papelão, plástico bolha, caixas, mão de obra)
-   - Desmontagem/Remontagem: +R$ 300-800 (móveis, eletrodomésticos)
-   - Sem elevador (3º andar+): +R$ 300-600 (esforço físico extra)
-   - Sem elevador (5º andar+): +R$ 500-1.000 (risco e dificuldade)
-   - Seguro de carga: +R$ 200-500 (recomendado para mudanças de valor)
-   - Pernoite (mudanças >600km): +R$ 400-800 (diárias, alimentação)
-   - Margem de lucro empresa: 20-30% sobre custos totais
-   
-   **REGRAS IMPORTANTES:**
-   - Faixa deve ter mínimo 30% de diferença entre min e max
-   - Valores devem refletir mercado brasileiro 2024/2025 (inflação, combustível caro)
-   - Mudanças interestaduais: SEMPRE incluir custos de logística, pedágios e possíveis pernoites
-   - Preços muito baixos indicam empresa não profissional ou sem seguro
+EXEMPLO: Vargem Grande Paulista (SP) → Rio de Janeiro (RJ), 390km, 2 quartos, elevador, embalagem
+MIN: 1.800 + 780 (combustível) + 150 (pedágio) + 1.000 (embalagem) = 3.730 × 1,25 = R$ 4.663 ≈ R$ 4.700
+MAX: 2.800 + 780 + 250 + 1.000 = 4.830 × 1,25 = R$ 6.037 ≈ R$ 6.000
 
-4. **EXEMPLOS DE REFERÊNCIA REALISTAS (2024/2025):**
-   - Mesma cidade (12 km, kitnet, com elevador, sem embalagem): R$ 1.200 - R$ 1.600
-   - Mesma cidade (12 km, 2 quartos, sem elevador 3º andar, sem embalagem): R$ 1.800 - R$ 2.500
-   - Mesma cidade (12 km, 2 quartos, com elevador, COM embalagem completa): R$ 2.800 - R$ 3.800
-   - Interestadual (430 km, 2 quartos, com elevador, com embalagem): R$ 4.500 - R$ 6.500
-   - Interestadual (1.100 km, 3+ quartos, sem elevador 4º andar, com embalagem): R$ 8.000 - R$ 12.000
+REGRAS:
+- NUNCA use "preço por km multiplicado pela distância"
+- precoMax = no máximo 60% maior que precoMin
+- Distâncias curtas (<50km): combustível tem pouco impacto
+- Distâncias longas (>400km): combustível é o maior custo adicional
 
-Retorne APENAS um JSON válido neste formato exato:
+REFERÊNCIAS:
+- Mesma cidade 15km, 2Q, elev, s/embal: R$ 2.300-3.500
+- Mesma cidade 15km, 2Q, elev, c/embal: R$ 3.500-4.800
+- Interestadual 430km, 2Q, elev, c/embal: R$ 4.800-7.000
+- Longa 1.100km, 3Q+, s/elev 4º, c/embal: R$ 9.250-14.000
+
+Retorne JSON:
 {
-  "distanciaKm": 12,
-  "precoMin": 800,
-  "precoMax": 1200,
-  "explicacao": "Explicação clara (máx 3 frases) mencionando: (1) localidades interpretadas, (2) distância calculada, (3) principais fatores de custo.",
-  "cidadeOrigem": "São Paulo",
+  "distanciaKm": 390,
+  "precoMin": 4700,
+  "precoMax": 6000,
+  "explicacao": "Mudança interestadual entre Vargem Grande Paulista (SP) e Rio de Janeiro (RJ), 390km. Custo base para 2 quartos com elevador, mais combustível ida/volta, pedágios e embalagem profissional.",
+  "cidadeOrigem": "Vargem Grande Paulista",
   "estadoOrigem": "SP",
-  "cidadeDestino": "São Paulo",
-  "estadoDestino": "SP"
+  "cidadeDestino": "Rio de Janeiro",
+  "estadoDestino": "RJ"
 }
 
-⚠️ IMPORTANTE: Sempre retorne cidade e estado CORRIGIDOS e ESTRUTURADOS, mesmo que o usuário tenha digitado errado.
-
-EXEMPLO DE RESPOSTA CORRETA:
-{
-  "distanciaKm": 12,
-  "precoMin": 850,
-  "precoMax": 1150,
-  "explicacao": "Mudança entre Moema e Santana, ambos bairros de São Paulo (12km). Distância curta dentro da mesma cidade, acesso facilitado com elevador. A faixa considera variação entre empresas mais econômicas e premium.",
-  "cidadeOrigem": "São Paulo",
-  "estadoOrigem": "SP",
-  "cidadeDestino": "São Paulo",
-  "estadoDestino": "SP"
-}`;
+⚠️ NÃO mencione "custo por km" na explicação!`;
 
     logger.info('api-calculadora', '🤖 Consultando IA para calcular distância e orçamento...', params);
 
