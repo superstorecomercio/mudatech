@@ -55,9 +55,13 @@ async function salvarOrcamento(dados, resultadoIA) {
       whatsapp: dados.whatsapp,                    // ✅ mantém também
       data_estimada: dados.data_estimada || null,  // ✅ snake_case
       
-      // Textos originais com _completo
-      origem_completo: dados.origem,               // ✅ _completo
-      destino_completo: dados.destino,             // ✅ _completo
+      // Textos validados pela IA com _completo (usar dados da IA, não os brutos)
+      origem_completo: resultadoIA.cidadeOrigem && resultadoIA.estadoOrigem 
+        ? `${resultadoIA.cidadeOrigem}, ${resultadoIA.estadoOrigem}`
+        : dados.origem,  // Fallback para dados brutos se IA não retornar
+      destino_completo: resultadoIA.cidadeDestino && resultadoIA.estadoDestino
+        ? `${resultadoIA.cidadeDestino}, ${resultadoIA.estadoDestino}`
+        : dados.destino,  // Fallback para dados brutos se IA não retornar
       
       // Dados extraídos pela IA (snake_case)
       estado_origem: resultadoIA.estadoOrigem,     // ✅ snake_case

@@ -1,5 +1,17 @@
 # Changelog - VPS WhatsApp Bot
 
+## [1.0.5] - 2025-11-26
+### Alterações
+- ✅ Ajustado cálculo de preços da IA para retornar apenas UMA faixa estimada completa
+- ✅ IA agora sempre considera a faixa MAIOR que inclui todos os custos (base + distância + adicionais)
+- ✅ Removida exibição de duas faixas separadas (base e com adicionais)
+- ✅ Prompt da IA atualizado para garantir que precoMin e precoMax sempre incluam todos os custos
+- ✅ Mensagem do bot atualizada para indicar "faixa estimada completa"
+
+### Arquivos Modificados
+- `openai-service.js` - Prompt ajustado para retornar apenas uma faixa completa com todos os custos
+- `message-handler.js` - Mensagem atualizada para indicar faixa completa
+
 ## [1.0.4] - 2025-11-26
 ### Alterações
 - ✅ Adicionada validação para evitar processamento de mensagens muito rápidas

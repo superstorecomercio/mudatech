@@ -445,7 +445,7 @@ ${resultadoSalvamento && resultadoSalvamento.codigo_orcamento ? `\n🔖 *Código
 📦 *Embalagem:* ${sessao.dados.precisa_embalagem ? 'Sim, completa' : 'Não precisa'}
 
 💰 *FAIXA DE PREÇO ESTIMADA:*
-*R$ ${resultadoIA.precoMin.toLocaleString('pt-BR')} - R$ ${resultadoIA.precoMax.toLocaleString('pt-BR')}*
+*R$ ${resultadoIA.precoMin.toLocaleString('pt-BR')} - R$ ${resultadoIA.precoMax.toLocaleString('pt-BR')}* (faixa estimada completa)
 
 📏 *Distância:* ${resultadoIA.distanciaKm} km
 

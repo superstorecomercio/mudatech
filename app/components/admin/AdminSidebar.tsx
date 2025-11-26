@@ -35,6 +35,11 @@ export default function AdminSidebar() {
     { href: '/admin/planos', label: 'Planos', icon: '💎' },
     { href: '/admin/cidades', label: 'Cidades', icon: '🌍' },
     { href: '/admin/orcamentos', label: 'Orçamentos', icon: '📝' },
+    { href: '/admin/emails', label: 'Controle de Emails', icon: '📧' },
+    { href: '/admin/emails/configuracao', label: 'Config. Emails', icon: '⚙️' },
+    { href: '/admin/emails/templates', label: 'Templates de Email', icon: '📝' },
+    { href: '/admin/emails/tracking', label: 'Rastreamento', icon: '🔍' },
+    { href: '/admin/emails/test-mode', label: 'Modo de Teste', icon: '🧪' },
   ];
 
   return (

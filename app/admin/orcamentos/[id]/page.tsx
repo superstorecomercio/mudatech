@@ -79,7 +79,14 @@ export default async function OrcamentoDetalhesPage({ params }: { params: Promis
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Detalhes do Orçamento</h1>
-            <p className="text-gray-500 mt-1">ID: {resolvedParams.id.slice(0, 8)}...</p>
+            {orcamento.codigo_orcamento && (
+              <p className="text-gray-500 mt-1">
+                <span className="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded font-mono">
+                  {orcamento.codigo_orcamento}
+                </span>
+              </p>
+            )}
+            <p className="text-gray-500 mt-1 text-sm">ID: {resolvedParams.id.slice(0, 8)}...</p>
           </div>
         </div>
       </div>
@@ -142,28 +149,22 @@ export default async function OrcamentoDetalhesPage({ params }: { params: Promis
         </div>
       )}
 
-      {/* Estimativa de Preço - Destaque */}
-      <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-300 p-6 shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <DollarSign className="w-6 h-6" />
-          Estimativa de Preço Calculada
+      {/* Estimativa de Preço - Compacta */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <DollarSign className="w-5 h-5" />
+          Estimativa de Preço
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm text-gray-600 mb-2">Preço Mínimo</p>
-            <p className="text-3xl font-bold text-green-900">
-              R$ {orcamento.preco_min?.toLocaleString('pt-BR')}
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm text-gray-600">Faixa Estimada</p>
+            <p className="text-xl font-bold text-gray-900">
+              R$ {orcamento.preco_min?.toLocaleString('pt-BR')} - R$ {orcamento.preco_max?.toLocaleString('pt-BR')}
             </p>
           </div>
-          <div className="text-center p-4">
-            <Truck className="w-8 h-8 text-green-700 mx-auto" />
-            <p className="text-sm text-gray-600 mt-2">Distância: {orcamento.distancia_km} km</p>
-          </div>
-          <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-            <p className="text-sm text-gray-600 mb-2">Preço Máximo</p>
-            <p className="text-3xl font-bold text-green-900">
-              R$ {orcamento.preco_max?.toLocaleString('pt-BR')}
-            </p>
+          <div className="text-right">
+            <p className="text-sm text-gray-600">Distância</p>
+            <p className="text-lg font-semibold text-gray-900">{orcamento.distancia_km} km</p>
           </div>
         </div>
       </div>
