@@ -8,17 +8,13 @@ import { formatDateTimeBR, formatDateTimeFullBR } from '@/lib/utils/date'
 interface TrackingData {
   id: string
   codigo_rastreamento: string
-  template_tipo?: string
-  tipo_email?: string
-  destinatario_email: string
-  email_destinatario?: string
+  tipo_email: string // Campo correto da tabela
+  email_destinatario: string // Campo correto da tabela
   assunto: string
   enviado_em: string
-  status_envio: string
-  erro_mensagem?: string
   visualizado?: boolean
   visualizado_em?: string | null
-  metadata?: any
+  metadata?: any // Status e erro ficam no metadata
   orcamentos?: any
   campanhas?: any
   hotsites?: any
@@ -227,10 +223,10 @@ export default function EmailTrackingPage() {
                       </code>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getTipoEmailLabel(tracking.template_tipo || tracking.tipo_email || 'email_enviado')}
+                      {getTipoEmailLabel(tracking.tipo_email || 'email_enviado')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {tracking.destinatario_email || tracking.email_destinatario || '-'}
+                      {tracking.email_destinatario || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {tracking.hotsites?.nome_exibicao || '-'}
@@ -239,7 +235,7 @@ export default function EmailTrackingPage() {
                       {formatDateTimeBR(tracking.enviado_em)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(tracking.status_envio || 'enviado', tracking.erro_mensagem)}
+                      {getStatusBadge(tracking.metadata?.status_envio || 'enviado', tracking.metadata?.erro_mensagem)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -281,11 +277,11 @@ export default function EmailTrackingPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Tipo de Email</label>
-                  <p className="mt-1 text-gray-900">{getTipoEmailLabel(selectedTracking.template_tipo || selectedTracking.tipo_email || 'email_enviado')}</p>
+                  <p className="mt-1 text-gray-900">{getTipoEmailLabel(selectedTracking.tipo_email || 'email_enviado')}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Destinatário</label>
-                  <p className="mt-1 text-gray-900">{selectedTracking.destinatario_email || selectedTracking.email_destinatario || '-'}</p>
+                  <p className="mt-1 text-gray-900">{selectedTracking.email_destinatario || '-'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Assunto</label>
