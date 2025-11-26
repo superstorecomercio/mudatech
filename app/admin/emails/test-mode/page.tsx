@@ -20,12 +20,13 @@ export default function TestModePage() {
   }, [])
 
   const checkTestMode = async () => {
-    // Verificar se está em modo de teste via API
+    // Verificar se está em modo de teste via API (busca do banco de dados)
     try {
       const response = await fetch('/api/admin/emails/test-mode/status')
       const data = await response.json()
       setTestModeActive(data.active || false)
     } catch (error) {
+      console.error('Erro ao verificar modo de teste:', error)
       // Fallback: verificar variáveis públicas
       setTestModeActive(
         process.env.NEXT_PUBLIC_EMAIL_TEST_MODE === 'true'
@@ -85,26 +86,52 @@ export default function TestModePage() {
     return new Date(dateString).toLocaleString('pt-BR')
   }
 
-  if (!testModeActive) {
+  if (!testModeActive && !loading) {
     return (
       <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Modo de Teste de Emails</h1>
+          <p className="text-gray-500 mt-1">Visualize e gerencie emails interceptados em modo de teste</p>
+        </div>
+        
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-yellow-600 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-semibold text-yellow-900 mb-2">
                 Modo de Teste Não Está Ativo
               </h2>
               <p className="text-sm text-yellow-700 mb-4">
-                Para ativar o modo de teste e interceptar emails, adicione no arquivo <code className="bg-yellow-100 px-2 py-1 rounded">.env.local</code>:
+                Para ativar o modo de teste e interceptar emails, você pode:
               </p>
-              <pre className="bg-yellow-100 p-4 rounded-lg text-sm overflow-x-auto">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-yellow-900 mb-2">Opção 1: Ativar via Interface (Recomendado)</p>
+                  <p className="text-sm text-yellow-700 mb-2">
+                    Use o botão abaixo para ativar o modo de teste diretamente. A configuração será salva no banco de dados.
+                  </p>
+                  <button
+                    onClick={handleToggleTestMode}
+                    disabled={toggling}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+                  >
+                    {toggling ? 'Aguarde...' : 'Ativar Modo de Teste'}
+                  </button>
+                </div>
+                <div className="border-t border-yellow-300 pt-4">
+                  <p className="text-sm font-medium text-yellow-900 mb-2">Opção 2: Variáveis de Ambiente</p>
+                  <p className="text-sm text-yellow-700 mb-2">
+                    Adicione no arquivo <code className="bg-yellow-100 px-2 py-1 rounded">.env.local</code>:
+                  </p>
+                  <pre className="bg-yellow-100 p-4 rounded-lg text-sm overflow-x-auto">
 {`EMAIL_TEST_MODE=true
 EMAIL_TEST_TO=seu-email@exemplo.com`}
-              </pre>
-              <p className="text-xs text-yellow-600 mt-4">
-                Ou simplesmente execute em modo de desenvolvimento (<code>npm run dev</code>) - o modo de teste será ativado automaticamente.
-              </p>
+                  </pre>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    Ou simplesmente execute em modo de desenvolvimento (<code>npm run dev</code>) - o modo de teste será ativado automaticamente.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
