@@ -354,7 +354,7 @@ export async function POST(request: NextRequest) {
             hotsite_id: hotsite?.id || '00000000-0000-0000-0000-000000000000',
             tipo_email: 'orcamento_empresa',
             email_destinatario: hotsite?.email || 'N/A',
-            assunto: templateResult?.assunto || 'Erro ao enviar orçamento',
+            assunto: 'Erro ao enviar orçamento',
             metadata: {
               provider: emailConfig.provider,
               status_envio: 'erro',
@@ -368,9 +368,9 @@ export async function POST(request: NextRequest) {
               fromName: emailConfig.from_name,
               replyTo: hotsite?.email || emailConfig.from_email,
               to: hotsite?.email || 'N/A',
-              subject: templateResult?.assunto || 'Erro ao enviar orçamento',
-              html_completo: templateResult?.html || '',
-              html_preview: templateResult?.html?.substring(0, 500) || ''
+              subject: 'Erro ao enviar orçamento',
+              html_completo: '',
+              html_preview: ''
             }
           })
         } catch (trackError) {
