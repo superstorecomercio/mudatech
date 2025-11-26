@@ -166,10 +166,10 @@ export async function interceptTestEmail(
     // Gerar código de rastreamento único
     const codigoRastreamento = `TEST-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
     
-    await supabase.from('email_tracking').insert({
+    const { data, error } = await supabase.from('email_tracking').insert({
       codigo_rastreamento: codigoRastreamento,
       template_tipo: 'teste_configuracao',
-      destinatario_email: originalTo.join(', '),
+      destinatario_email: Array.isArray(originalTo) ? originalTo.join(', ') : originalTo,
       assunto: options.subject,
       status_envio: 'enviado',
       metadata: {
@@ -178,12 +178,20 @@ export async function interceptTestEmail(
         destinatario_redirecionado: testEmail,
         provider,
         from: options.from,
-        fromName: options.fromName
+        fromName: options.fromName,
+        html_preview: options.html.substring(0, 500) // Salvar preview do HTML
       }
-    })
+    }).select()
+    
+    if (error) {
+      console.error('❌ Erro ao salvar log de teste no banco:', error)
+      console.error('Detalhes:', JSON.stringify(error, null, 2))
+    } else {
+      console.log('✅ Log de teste salvo no banco:', codigoRastreamento)
+    }
   } catch (error) {
     // Se falhar ao salvar no banco, apenas logar (não quebrar o fluxo)
-    console.error('Erro ao salvar log de teste no banco:', error)
+    console.error('❌ Erro ao salvar log de teste no banco:', error)
   }
   
   // Adicionar aviso no HTML do email
@@ -222,31 +230,40 @@ export async function getTestEmailLogs(): Promise<TestEmailLog[]> {
     const { createAdminClient } = await import('@/lib/supabase/server')
     const supabase = createAdminClient()
     
-    // Buscar logs de teste do banco
+    // Buscar logs de teste do banco - corrigir query
     const { data, error } = await supabase
       .from('email_tracking')
       .select('*')
-      .eq('status_envio', 'enviado')
-      .or('template_tipo.eq.teste_configuracao,metadata->modo_teste.eq.true')
+      .or('template_tipo.eq.teste_configuracao,and(status_envio.eq.enviado,metadata->modo_teste.eq.true)')
       .order('enviado_em', { ascending: false })
       .limit(100)
     
     if (error) {
       console.error('Erro ao buscar logs de teste:', error)
+      console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
       // Fallback para cache em memória
       return [...testEmailLogs]
     }
     
+    console.log(`📧 [TEST MODE] Encontrados ${data?.length || 0} logs de teste no banco`)
+    
     // Converter para formato TestEmailLog
-    return (data || []).map(item => ({
-      to: item.metadata?.destinatario_original || item.destinatario_email,
-      subject: item.assunto,
-      html: '', // Não salvar HTML completo no banco (muito grande)
-      from: item.metadata?.from || '',
-      fromName: item.metadata?.fromName,
-      timestamp: item.enviado_em,
-      provider: item.metadata?.provider || 'unknown'
-    }))
+    const logs = (data || []).map(item => {
+      const destinatarios = item.metadata?.destinatario_original || 
+                           (Array.isArray(item.destinatario_email) ? item.destinatario_email : [item.destinatario_email])
+      
+      return {
+        to: Array.isArray(destinatarios) ? destinatarios : [destinatarios],
+        subject: item.assunto || '',
+        html: '', // Não salvar HTML completo no banco (muito grande)
+        from: item.metadata?.from || '',
+        fromName: item.metadata?.fromName,
+        timestamp: item.enviado_em || new Date().toISOString(),
+        provider: item.metadata?.provider || 'unknown'
+      }
+    })
+    
+    return logs
   } catch (error) {
     console.error('Erro ao buscar logs de teste:', error)
     // Fallback para cache em memória
