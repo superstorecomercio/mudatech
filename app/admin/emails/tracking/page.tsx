@@ -96,9 +96,22 @@ export default function EmailTrackingPage() {
       campanha_vencendo_1dia: 'Campanha Vencendo (1 dia)',
       campanha_vencendo_hoje: 'Campanha Vencendo (Hoje)',
       campanha_ativada: 'Campanha Ativada',
-      campanha_desativada: 'Campanha Desativada'
+      campanha_desativada: 'Campanha Desativada',
+      teste_configuracao: 'Teste de Configuração',
+      email_enviado: 'Email Enviado',
+      email_erro: 'Erro no Envio'
     }
     return labels[tipo] || tipo
+  }
+  
+  const getStatusBadge = (status: string, erro?: string) => {
+    if (status === 'enviado') {
+      return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Enviado</span>
+    }
+    if (status === 'erro') {
+      return <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full" title={erro}>Erro</span>
+    }
+    return <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">{status}</span>
   }
 
   return (
@@ -214,10 +227,10 @@ export default function EmailTrackingPage() {
                       </code>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getTipoEmailLabel(tracking.tipo_email)}
+                      {getTipoEmailLabel(tracking.template_tipo || tracking.tipo_email || 'email_enviado')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {tracking.email_destinatario}
+                      {tracking.destinatario_email || tracking.email_destinatario || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {tracking.hotsites?.nome_exibicao || '-'}
@@ -226,15 +239,7 @@ export default function EmailTrackingPage() {
                       {formatDateTimeBR(tracking.enviado_em)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {tracking.visualizado ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                          Visualizado
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
-                          Não visualizado
-                        </span>
-                      )}
+                      {getStatusBadge(tracking.status_envio || 'enviado', tracking.erro_mensagem)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -280,7 +285,7 @@ export default function EmailTrackingPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Destinatário</label>
-                  <p className="mt-1 text-gray-900">{selectedTracking.email_destinatario}</p>
+                  <p className="mt-1 text-gray-900">{selectedTracking.destinatario_email || selectedTracking.email_destinatario || '-'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Assunto</label>
