@@ -1,5 +1,6 @@
 export interface Lead {
   id: string
+  codigo_orcamento?: string
   customer_name: string
   customer_email: string
   customer_phone: string
@@ -19,6 +20,7 @@ export interface Lead {
 export const mockLeads: Lead[] = [
   {
     id: "1",
+    codigo_orcamento: "MD-A1B2-C3D4",
     customer_name: "Maria Silva Santos",
     customer_email: "maria.silva@email.com",
     customer_phone: "(11) 98765-4321",
@@ -37,6 +39,7 @@ export const mockLeads: Lead[] = [
   },
   {
     id: "2",
+    codigo_orcamento: "MD-E5F6-G7H8",
     customer_name: "João Pedro Costa",
     customer_email: "joao.costa@empresa.com.br",
     customer_phone: "(21) 97654-3210",
@@ -54,6 +57,7 @@ export const mockLeads: Lead[] = [
   },
   {
     id: "3",
+    codigo_orcamento: "MD-I9J0-K1L2",
     customer_name: "Ana Carolina Oliveira",
     customer_email: "ana.oliveira@gmail.com",
     customer_phone: "(31) 99876-5432",
@@ -71,6 +75,7 @@ export const mockLeads: Lead[] = [
   },
   {
     id: "4",
+    codigo_orcamento: "MD-M3N4-O5P6",
     customer_name: "Roberto Almeida",
     customer_email: "roberto.almeida@outlook.com",
     customer_phone: "(85) 98123-4567",
@@ -88,6 +93,7 @@ export const mockLeads: Lead[] = [
   },
   {
     id: "5",
+    codigo_orcamento: "MD-Q7R8-S9T0",
     customer_name: "Fernanda Rodrigues Lima",
     customer_email: "fernanda.lima@email.com",
     customer_phone: "(41) 97777-8888",

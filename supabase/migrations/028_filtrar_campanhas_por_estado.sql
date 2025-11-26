@@ -57,7 +57,8 @@ CREATE FUNCTION criar_orcamento_e_notificar(p_orcamento_data JSONB)
 RETURNS TABLE (
   orcamento_id UUID,
   hotsites_notificados INTEGER,
-  campanhas_ids UUID[]
+  campanhas_ids UUID[],
+  codigo_orcamento VARCHAR(12)
 )
 SECURITY DEFINER
 SET search_path = public
@@ -70,6 +71,7 @@ DECLARE
   v_campanhas RECORD;
   v_hotsites_count INTEGER := 0;
   v_campanhas_array UUID[] := '{}';
+  v_codigo_orcamento VARCHAR(12);
 BEGIN
   -- Validações obrigatórias
   IF p_orcamento_data->>'nome_cliente' IS NULL OR (p_orcamento_data->>'nome_cliente')::TEXT = '' THEN
@@ -184,12 +186,33 @@ BEGIN
   SET hotsites_notificados = v_hotsites_count
   WHERE id = v_orcamento_id;
 
-  -- 5. Retornar resultado
+  -- 5. Buscar código do orçamento gerado
+  SELECT codigo_orcamento INTO v_codigo_orcamento
+  FROM orcamentos
+  WHERE id = v_orcamento_id;
+  
+  -- Se não tiver código, gerar (caso o trigger não tenha funcionado)
+  IF v_codigo_orcamento IS NULL OR v_codigo_orcamento = '' THEN
+    -- Usar função gerar_codigo_orcamento se existir, senão usar substring do UUID
+    BEGIN
+      v_codigo_orcamento := gerar_codigo_orcamento(v_orcamento_id);
+      UPDATE orcamentos SET codigo_orcamento = v_codigo_orcamento WHERE id = v_orcamento_id;
+    EXCEPTION WHEN OTHERS THEN
+      -- Fallback: gerar código manualmente
+      v_codigo_orcamento := 'MD-' || UPPER(SUBSTRING(REPLACE(v_orcamento_id::TEXT, '-', ''), 1, 4)) || '-' ||
+                            UPPER(SUBSTRING(REPLACE(v_orcamento_id::TEXT, '-', ''), 5, 4));
+      UPDATE orcamentos SET codigo_orcamento = v_codigo_orcamento WHERE id = v_orcamento_id;
+    END;
+  END IF;
+  
+  -- 6. Retornar resultado incluindo código
   RETURN QUERY
   SELECT 
     v_orcamento_id,
     v_hotsites_count,
-    v_campanhas_array;
+    v_campanhas_array,
+    COALESCE(v_codigo_orcamento, 'MD-' || UPPER(SUBSTRING(REPLACE(v_orcamento_id::TEXT, '-', ''), 1, 4)) || '-' ||
+              UPPER(SUBSTRING(REPLACE(v_orcamento_id::TEXT, '-', ''), 5, 4)));
 END;
 $$;
 

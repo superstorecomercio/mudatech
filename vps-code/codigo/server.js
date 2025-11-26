@@ -79,5 +79,5 @@ app.get('/health', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📱 Webhook URL: https://mudancas.duckdns.org/webhook`);
+    console.log(`📱 Webhook URL: https://mudatech.com.br/webhook`);
 });

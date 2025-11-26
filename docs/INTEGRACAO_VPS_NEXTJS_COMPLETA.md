@@ -1358,11 +1358,11 @@ ALTER TABLE orcamentos ADD COLUMN novo_campo VARCHAR(255);
 - **Domínio:** mudancas.duckdns.org
 - **Localização código:** `/home/whatsapp-webhook/`
 - **Process Manager:** PM2
-- **Webhook URL:** `https://mudancas.duckdns.org/webhook`
+- **Webhook URL:** `https://mudatech.com.br/webhook` (ou manter DuckDNS se necessário)
 
 ### Next.js
 
-- **URL produção:** `https://mudatech.vercel.app`
+- **URL produção:** `https://mudatech.com.br`
 - **API calculadora:** `/api/calcular-orcamento`
 - **API webhooks:** `/api/orcamentos`
 

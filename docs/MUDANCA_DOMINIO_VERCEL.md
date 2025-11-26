@@ -1,4 +1,4 @@
-# 🔄 Mudança de Domínio: novoguia.vercel.app → mudatech.vercel.app
+# 🔄 Mudança de Domínio: novoguia.vercel.app → mudatech.com.br
 
 ## ✅ O que precisa ser alterado
 
@@ -6,11 +6,11 @@
 
 1. Acesse: https://vercel.com/dashboard
 2. Selecione o projeto
-3. Vá em **Settings** → **General**
-4. Em **Project Name**, altere de `novoguia` para `mudatech`
-5. Salve
+3. Vá em **Settings** → **Domains**
+4. Adicione o domínio customizado: `mudatech.com.br`
+5. Configure o DNS conforme instruções da Vercel
 
-**Resultado:** A URL automaticamente muda de `novoguia.vercel.app` para `mudatech.vercel.app`
+**Resultado:** O site estará disponível em `mudatech.com.br`
 
 ---
 
@@ -37,7 +37,7 @@ url = "https://novoguia.vercel.app/api/orcamentos"
 **Depois:**
 ```python
 # Python
-url = "https://mudatech.vercel.app/api/orcamentos"
+url = "https://mudatech.com.br/api/orcamentos"
 ```
 
 **Ou melhor ainda, usar variável de ambiente:**
@@ -45,9 +45,9 @@ url = "https://mudatech.vercel.app/api/orcamentos"
 import os
 
 # No arquivo .env da VPS
-# API_URL=https://mudatech.vercel.app/api/orcamentos
+# API_URL=https://mudatech.com.br/api/orcamentos
 
-url = os.getenv('API_URL', 'https://mudatech.vercel.app/api/orcamentos')
+url = os.getenv('API_URL', 'https://mudatech.com.br/api/orcamentos')
 ```
 
 ---
@@ -58,12 +58,12 @@ Se você tiver variáveis de ambiente configuradas com a URL antiga:
 
 #### Na Vercel:
 1. Vá em **Settings** → **Environment Variables**
-2. Procure por variáveis que contenham `novoguia.vercel.app`
-3. Atualize para `mudatech.vercel.app`
+2. Procure por variáveis que contenham `novoguia.vercel.app` ou `mudatech.vercel.app`
+3. Atualize para `mudatech.com.br`
 
 #### Na VPS:
 1. Edite o arquivo `.env` ou configuração de ambiente
-2. Atualize qualquer referência a `novoguia.vercel.app`
+2. Atualize qualquer referência a `novoguia.vercel.app` ou `mudatech.vercel.app` para `mudatech.com.br`
 
 ---
 
@@ -75,7 +75,7 @@ Se você tem webhooks configurados em outros serviços que chamam sua API:
 - **WhatsApp Business API** (se configurado)
 - **Outros serviços**
 
-Atualize as URLs de callback para: `https://mudatech.vercel.app/api/...`
+Atualize as URLs de callback para: `https://mudatech.com.br/api/...`
 
 ---
 
@@ -106,7 +106,7 @@ Se você tem um domínio customizado configurado (ex: `mudatech.com.br`):
 ## 🔍 Checklist Completo
 
 - [ ] Mudar nome do projeto na Vercel (`novoguia` → `mudatech`)
-- [ ] Verificar se a URL mudou para `mudatech.vercel.app`
+- [ ] Verificar se a URL mudou para `mudatech.com.br`
 - [ ] Atualizar código na VPS (se tiver URLs hardcoded)
 - [ ] Atualizar variáveis de ambiente na VPS (se houver)
 - [ ] Atualizar webhooks externos (se houver)
@@ -120,7 +120,7 @@ Se você tem um domínio customizado configurado (ex: `mudatech.com.br`):
 ### 1. Testar URL nova diretamente:
 
 ```bash
-curl -X POST https://mudatech.vercel.app/api/test-post \
+curl -X POST https://mudatech.com.br/api/test-post \
   -H "Content-Type: application/json" \
   -d '{"test": "ok"}'
 ```
@@ -128,7 +128,7 @@ curl -X POST https://mudatech.vercel.app/api/test-post \
 ### 2. Testar endpoint de orçamentos:
 
 ```bash
-curl -X POST https://mudatech.vercel.app/api/orcamentos \
+curl -X POST https://mudatech.com.br/api/orcamentos \
   -H "Content-Type: application/json" \
   -d '{
     "nomeCliente": "Teste",
@@ -182,7 +182,7 @@ Se você usa CDN ou cache:
 
 **Solução:**
 1. Verificar se atualizou a URL na VPS
-2. Verificar se a nova URL está funcionando: `https://mudatech.vercel.app/api/test-post`
+2. Verificar se a nova URL está funcionando: `https://mudatech.com.br/api/test-post`
 3. Verificar logs da Vercel para ver se a requisição está chegando
 
 ### Problema: Erro 404 na nova URL

@@ -21,7 +21,7 @@ Rota que recebe:
 
 **Exemplo de URL:**
 ```
-https://novoguia.vercel.app/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
+https://mudatech.com.br/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
 ```
 
 ### 2. `vps-code/codigo/url-shortener.js` (MODIFICADO)
@@ -46,10 +46,10 @@ https://novoguia.vercel.app/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
 
 No `.env` da VPS, pode configurar:
 ```bash
-API_BASE_URL=https://novoguia.vercel.app
+API_BASE_URL=https://mudatech.com.br
 ```
 
-Se não configurar, usa `https://novoguia.vercel.app` como padrão.
+Se não configurar, usa `https://mudatech.com.br` como padrão.
 
 ## 📊 Comparação de Tamanho
 
@@ -61,7 +61,7 @@ https://wa.me/5511999999999?text=Olá!%20Recebi%20um%20orçamento...
 
 **Depois (URL curta própria):**
 ```
-https://novoguia.vercel.app/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
+https://mudatech.com.br/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
 ```
 ~100-150 caracteres por link
 
@@ -75,7 +75,7 @@ https://novoguia.vercel.app/api/w?t=5511999999999&d=eyJuYW1lIjoiSm9...
 
 ## ⚠️ Nota Importante
 
-A URL base está configurada como `https://novoguia.vercel.app`. Se o domínio mudou para `mudatech.vercel.app`, atualizar:
+A URL base está configurada como `https://mudatech.com.br`. Se precisar alterar, atualizar:
 - No código: `vps-code/codigo/url-shortener.js`
 - Ou configurar variável de ambiente `API_BASE_URL` na VPS
 

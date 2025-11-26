@@ -20,6 +20,7 @@ import QuoteModal from "./quote-modal"
 
 interface Lead {
   id: string
+  codigo_orcamento?: string
   customer_name: string
   customer_email: string
   customer_phone: string
@@ -84,7 +85,14 @@ export default function LeadCard({ lead }: LeadCardProps) {
         <CardHeader className="space-y-3 pb-4">
           <div className="flex items-start justify-between gap-2">
             <div className="space-y-1 flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate">{lead.customer_name}</h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                {lead.codigo_orcamento && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-xs">
+                    {lead.codigo_orcamento}
+                  </Badge>
+                )}
+                <h3 className="font-semibold text-lg truncate">{lead.customer_name}</h3>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Badge className={statusConfig[lead.status as keyof typeof statusConfig].color}>
                   {statusConfig[lead.status as keyof typeof statusConfig].label}

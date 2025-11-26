@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { validarEFormatarTelefone } = require('./telefone-validator');
 require('dotenv').config();
 
 // Importar url-shortener com tratamento de erro
@@ -10,9 +11,12 @@ try {
 } catch (err) {
   console.error('Erro ao carregar url-shortener:', err);
   // Fallback: função que retorna URL direta sem mensagem (muito mais curta)
-  criarLinkWhatsApp = (telefone, dados) => {
-    const telefoneLimpo = telefone.replace(/\D/g, '');
-    return `https://wa.me/${telefoneLimpo}`;
+  criarLinkWhatsApp = async (telefone, dados) => {
+    const telefoneFormatado = validarEFormatarTelefone(telefone);
+    if (!telefoneFormatado) {
+      throw new Error(`Telefone inválido: ${telefone}`);
+    }
+    return `https://wa.me/${telefoneFormatado}`;
   };
 }
 
@@ -103,6 +107,34 @@ async function salvarOrcamento(dados, resultadoIA) {
 
     const resultado = data[0];
     const campanhasIds = resultado.campanhas_ids || [];
+    let codigoOrcamento = resultado.codigo_orcamento || null;
+    
+    console.log('📋 Resultado completo da função SQL:', JSON.stringify(resultado, null, 2));
+    console.log('📋 Código do orçamento retornado:', codigoOrcamento);
+    console.log('📋 Tipo do código:', typeof codigoOrcamento);
+    
+    // Se o código não veio, tentar buscar diretamente do banco
+    if (!codigoOrcamento) {
+      console.warn('⚠️ Código não retornado pela função SQL. Buscando diretamente do banco...');
+      try {
+        const { data: orcamentoData, error: orcamentoError } = await supabase
+          .from('orcamentos')
+          .select('codigo_orcamento')
+          .eq('id', resultado.orcamento_id)
+          .single();
+        
+        if (!orcamentoError && orcamentoData && orcamentoData.codigo_orcamento) {
+          console.log('✅ Código encontrado diretamente no banco:', orcamentoData.codigo_orcamento);
+          // Atualizar o código no resultado E na variável
+          codigoOrcamento = orcamentoData.codigo_orcamento;
+          resultado.codigo_orcamento = orcamentoData.codigo_orcamento;
+        } else {
+          console.error('❌ Erro ao buscar código do banco:', orcamentoError);
+        }
+      } catch (err) {
+        console.error('❌ Erro ao buscar código do banco:', err);
+      }
+    }
 
     // Buscar nomes das empresas notificadas
     let empresasNotificadas = [];
@@ -167,26 +199,45 @@ async function salvarOrcamento(dados, resultadoIA) {
             if (dadosEmpresa.telefone1) {
               try {
                 if (criarLinkWhatsApp) {
-                  // Passar dados completos (dados da sessão + resultadoIA) para criar URL curta
+                  // Passar dados completos (dados da sessão + resultadoIA + código) para criar URL curta
+                  // Usar resultado.codigo_orcamento que pode ter sido atualizado pelo fallback
+                  const codigoParaLink = resultado.codigo_orcamento || codigoOrcamento || null;
                   const dadosCompletos = {
                     ...dados,
-                    ...resultadoIA
+                    ...resultadoIA,
+                    codigo_orcamento: codigoParaLink
                   };
                   
-                  // criarLinkWhatsApp agora recebe dados completos e cria URL curta usando rota própria
-                  linkWhatsApp = criarLinkWhatsApp(dadosEmpresa.telefone1, dadosCompletos);
-                  console.log(`Link WhatsApp curto criado para ${nome}: ${linkWhatsApp}`);
+                  // Tentar criar link WhatsApp encurtado
+                  try {
+                    linkWhatsApp = await criarLinkWhatsApp(dadosEmpresa.telefone1, dadosCompletos);
+                    console.log(`✅ Link WhatsApp encurtado criado para ${nome}: ${linkWhatsApp}`);
+                  } catch (linkErr) {
+                    // Se falhar ao criar/encurtar URL, não enviar link (apenas nome da empresa)
+                    console.error(`❌ Erro ao criar link WhatsApp para ${nome}:`, linkErr.message);
+                    console.log(`⚠️ Empresa ${nome} será exibida sem link`);
+                    linkWhatsApp = null; // Não enviar link se houver erro
+                  }
                 } else {
                   // Fallback: criar URL direta sem mensagem (muito mais curta)
-                  const telefoneLimpo = dadosEmpresa.telefone1.replace(/\D/g, '');
-                  linkWhatsApp = `https://wa.me/${telefoneLimpo}`;
-                  console.log(`Link WhatsApp (sem mensagem) criado para ${nome}`);
+                  const telefoneFormatado = validarEFormatarTelefone(dadosEmpresa.telefone1);
+                  if (telefoneFormatado) {
+                    try {
+                      linkWhatsApp = `https://wa.me/${telefoneFormatado}`;
+                      console.log(`Link WhatsApp (sem mensagem) criado para ${nome}`);
+                    } catch (err) {
+                      console.error(`Erro ao criar link direto para ${nome}:`, err.message);
+                      linkWhatsApp = null; // Não enviar link se houver erro
+                    }
+                  } else {
+                    console.warn(`Telefone inválido para ${nome}: ${dadosEmpresa.telefone1}`);
+                    linkWhatsApp = null; // Não enviar link se telefone inválido
+                  }
                 }
               } catch (err) {
                 console.error(`Erro ao processar link WhatsApp para ${nome}:`, err);
-                // Fallback: criar URL direta sem mensagem
-                const telefoneLimpo = dadosEmpresa.telefone1.replace(/\D/g, '');
-                linkWhatsApp = `https://wa.me/${telefoneLimpo}`;
+                // Em caso de erro, não enviar link (apenas nome da empresa)
+                linkWhatsApp = null;
               }
             }
             
@@ -213,10 +264,16 @@ async function salvarOrcamento(dados, resultadoIA) {
       empresas_count: empresasNotificadas.length
     });
 
+    // Usar o código atualizado (pode ter sido buscado diretamente do banco)
+    const codigoFinal = resultado.codigo_orcamento || codigoOrcamento || null;
+    
+    console.log('📋 Código final que será retornado:', codigoFinal);
+    
     return {
       orcamento_id: resultado.orcamento_id,
       hotsites_notificados: resultado.hotsites_notificados || 0,
       campanhas_ids: campanhasIds,
+      codigo_orcamento: codigoFinal,
       empresasNotificadas: empresasNotificadas
     };
     

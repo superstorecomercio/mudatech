@@ -146,7 +146,7 @@ const ContatoPage = () => {
         </h2>
         <div className="space-y-2 text-gray-700">
           <p>
-            <strong>E-mail:</strong> contato@guiademudancas.com.br
+            <strong>E-mail:</strong> contato@mudatech.com.br
           </p>
           <p>
             <strong>Horário de Atendimento:</strong> Segunda a Sexta, das 9h às

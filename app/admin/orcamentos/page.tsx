@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 
 interface Orcamento {
   id: string
+  codigo_orcamento?: string
   nome_cliente: string
   email_cliente: string
   whatsapp: string
@@ -191,6 +192,11 @@ export default async function OrcamentosPage() {
                   <tr key={orcamento.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
+                        {orcamento.codigo_orcamento && (
+                          <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mr-2 font-mono">
+                            {orcamento.codigo_orcamento}
+                          </span>
+                        )}
                         {orcamento.nome_cliente}
                       </div>
                       <div className="text-sm text-gray-500">{orcamento.email_cliente}</div>

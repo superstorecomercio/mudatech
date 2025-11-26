@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * Cria mensagem simplificada para WhatsApp
+ * Deve ser idêntica à função criarMensagemSimplificada do url-shortener.js
  */
 function criarMensagemSimplificada(dados: any): string {
   const tipoImovelLabels: Record<string, string> = {
@@ -68,17 +69,56 @@ function criarMensagemSimplificada(dados: any): string {
     comercial: 'Comercial'
   };
   
-  const tipoImovel = tipoImovelLabels[dados.tipo] || dados.tipo || 'Não informado';
+  // Compatibilidade: pode vir como 'tipo' ou 'tipo_imovel'
+  const tipoImovel = tipoImovelLabels[dados.tipo_imovel || dados.tipo] || dados.tipo_imovel || dados.tipo || 'Não informado';
   
-  // Mensagem ultra-simplificada para reduzir tamanho da URL
-  let msg = `Olá! Recebi um orçamento de mudança.\n\n`;
-  msg += `*Dados:*\n`;
-  msg += `👤 ${dados.nome || ''}\n`;
-  msg += `📍 ${dados.origem || ''} → ${dados.destino || ''}\n`;
-  msg += `🏠 ${tipoImovel}\n`;
-  msg += `📏 ${dados.distancia || 0}km\n`;
-  msg += `💰 R$ ${dados.precoMin || 0} - R$ ${dados.precoMax || 0}\n`;
-  msg += `\nGostaria de uma cotação.`;
+  // Mensagem para empresas - versão otimizada para reduzir tamanho da URL
+  let msg = `Vou mudar e preciso desse orçamento:\n\n`;
+  msg += `*Orçamento enviado por MudaTech*\n`;
+  
+  // Adicionar código do orçamento se disponível
+  if (dados.codigo_orcamento) {
+    msg += `🔖 *Código:* ${dados.codigo_orcamento}\n`;
+  }
+  msg += `👤 ${dados.nome || 'Cliente'}\n`;
+  msg += `📧 ${dados.email || 'Não informado'}\n`;
+  
+  // Compatibilidade: pode vir como 'origem'/'destino' ou 'cidadeOrigem'/'cidadeDestino'
+  const origem = dados.cidadeOrigem || dados.origem || '';
+  const estadoOrigem = dados.estadoOrigem || '';
+  const destino = dados.cidadeDestino || dados.destino || '';
+  const estadoDestino = dados.estadoDestino || '';
+  
+  msg += `📍 ${origem}${estadoOrigem ? ', ' + estadoOrigem : ''} → ${destino}${estadoDestino ? ', ' + estadoDestino : ''}\n`;
+  msg += `🏠 Tipo: ${tipoImovel}\n`;
+  msg += `🚪 Elevador: ${dados.tem_elevador ? 'Sim' : 'Não'}\n`;
+  msg += `📦 Embalagem: ${dados.precisa_embalagem ? 'Sim' : 'Não'}\n`;
+  
+  // Compatibilidade: pode vir como 'distancia' ou 'distanciaKm'
+  const distancia = dados.distanciaKm || dados.distancia || 0;
+  msg += `📏 Distância: ${distancia}km\n`;
+  msg += `💰 Faixa: R$ ${dados.precoMin || 0} - R$ ${dados.precoMax || 0}\n`;
+  
+  // Adicionar data estimada se houver
+  if (dados.data_estimada) {
+    // Formatar data (DD/MM/YYYY)
+    try {
+      const data = new Date(dados.data_estimada);
+      if (!isNaN(data.getTime())) {
+        const dia = String(data.getDate()).padStart(2, '0');
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const ano = data.getFullYear();
+        msg += `📅 Data: ${dia}/${mes}/${ano}\n`;
+      }
+    } catch (e) {
+      // Se já estiver formatada, usar como está
+      if (typeof dados.data_estimada === 'string' && dados.data_estimada.includes('/')) {
+        msg += `📅 Data: ${dados.data_estimada}\n`;
+      }
+    }
+  }
+  
+  msg += `\nGostaria de uma cotação personalizada.`;
   
   return msg;
 }

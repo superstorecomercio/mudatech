@@ -131,11 +131,11 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:contato@guiademudancas.com.br"
+                  href="mailto:contato@mudatech.com.br"
                   className="flex items-center gap-3 hover:text-white transition-colors text-sm"
                 >
                   <Mail className="w-5 h-5 text-accent flex-shrink-0" />
-                  <span>contato@guiademudancas.com.br</span>
+                  <span>contato@mudatech.com.br</span>
                 </a>
               </li>
               <li>

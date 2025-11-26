@@ -2,6 +2,7 @@ const { PERGUNTAS, criarSessao, getSessao, atualizarSessao, proximaEtapa, limpar
 const { enviarMensagem, enviarBotoes, enviarLista, enviarTyping } = require('./whatsapp');
 const { calcularOrcamentoComIA } = require('./openai-service');
 const { salvarOrcamento } = require('./supabase-service');
+const { validarEFormatarData } = require('./date-validator');
 
 // ✅ Palavras-chave para ativar o bot
 const PALAVRAS_ATIVACAO = [
@@ -23,30 +24,43 @@ function validarEmail(email) {
   return regex.test(email);
 }
 
+/**
+ * Previne que números no texto sejam detectados como clicáveis pelo WhatsApp
+ * Envolve o texto entre aspas para evitar detecção automática de números
+ */
+function prevenirNumerosClicaveis(texto) {
+  if (!texto) return texto;
+  // Envolver o texto entre aspas para evitar que números sejam clicáveis
+  return `"${texto}"`;
+}
+
 function validarData(data) {
   if (!data || data.toLowerCase() === 'pular' || data.toLowerCase() === 'não sei') {
     return null; // Data opcional
   }
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(data)) {
-    // Tentar outros formatos comuns
-    const dateFormats = [
-      /^(\d{2})\/(\d{2})\/(\d{4})$/, // DD/MM/YYYY
-      /^(\d{2})-(\d{2})-(\d{4})$/    // DD-MM-YYYY
-    ];
-    
-    for (let format of dateFormats) {
-      const match = data.match(format);
-      if (match) {
-        return `${match[3]}-${match[2]}-${match[1]}`; // Converter para YYYY-MM-DD
-      }
-    }
-    return false;
+  
+  // Usar a função validarEFormatarData que aceita vários formatos (DD/MM, DD.MM, DD MM, DD/MM/YYYY, etc.)
+  const dataFormatada = validarEFormatarData(data);
+  
+  if (!dataFormatada) {
+    return false; // Data inválida
   }
   
-  const dataObj = new Date(data);
-  const hoje = new Date();
-  return dataObj >= hoje ? data : false;
+  // Converter DD/MM/YYYY para YYYY-MM-DD para salvar no banco
+  const partes = dataFormatada.split('/');
+  if (partes.length === 3) {
+    const [dia, mes, ano] = partes;
+    const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); // Zerar horas para comparar apenas a data
+    
+    // Verificar se a data é válida e não é no passado
+    if (dataObj >= hoje) {
+      return `${ano}-${mes}-${dia}`; // Retornar no formato YYYY-MM-DD para o banco
+    }
+  }
+  
+  return false; // Data inválida ou no passado
 }
 
 async function processarMensagem(from, mensagem) {
@@ -175,10 +189,10 @@ async function processarMensagem(from, mensagem) {
       proximaEtapa(from);
       
       await enviarBotoes(from,
-        '📝 *Antes de calcular, você gostaria de enviar uma lista de objetos para um orçamento mais preciso?*',
+        '📝 *Gostaria de enviar uma lista de objetos ou informações adicionais para um orçamento mais preciso?*',
         [
-          { id: 'lista_sim', title: 'Sim, quero' },
-          { id: 'lista_nao', title: 'Não precisa' }
+          { id: 'lista_sim', title: 'Sim, enviar' },
+          { id: 'lista_nao', title: 'Pular esta etapa' }
         ]
       );
     }
@@ -189,7 +203,7 @@ async function processarMensagem(from, mensagem) {
       proximaEtapa(from);
       
       if (querLista) {
-        await enviarMensagem(from, '📝 *Perfeito! Descreva os objetos que serão transportados.*\n\n_Ex: Sofá de 3 lugares, mesa de jantar com 6 cadeiras, geladeira, fogão, guarda-roupa..._');
+        await enviarMensagem(from, '📝 *Ótimo! Envie a lista de objetos ou informações adicionais sobre sua mudança.*\n\n_Ex: Sofá de 3 lugares, mesa de jantar com 6 cadeiras, geladeira, fogão, guarda-roupa..._\n\n_💡 Você também pode incluir informações como: itens frágeis, objetos de grande porte, necessidade de desmontagem, etc._');
       } else {
         await finalizarOrcamento(from);
       }
@@ -223,6 +237,7 @@ async function finalizarOrcamento(from) {
     try {
       resultadoSalvamento = await salvarOrcamento(sessao.dados, resultadoIA);
       console.log('Orçamento salvo com sucesso:', resultadoSalvamento);
+      console.log('🔖 Código do orçamento:', resultadoSalvamento?.codigo_orcamento);
     } catch (err) {
       console.error('❌ Erro ao salvar orçamento:', err);
       console.error('Stack trace:', err.stack);
@@ -240,10 +255,10 @@ async function finalizarOrcamento(from) {
     };
     
     const resultado = `
-✅ *ORÇAMENTO CALCULADO!*
+📋 *Dados do Orçamento*
 
-👤 *Cliente:* ${sessao.dados.nome}
-📧 *Email:* ${sessao.dados.email}
+✅ *ORÇAMENTO CALCULADO!*
+${resultadoSalvamento && resultadoSalvamento.codigo_orcamento ? `\n🔖 *Código:* ${resultadoSalvamento.codigo_orcamento}\n` : ''}
 
 📍 *Origem:* ${resultadoIA.cidadeOrigem}, ${resultadoIA.estadoOrigem}
 🎯 *Destino:* ${resultadoIA.cidadeDestino}, ${resultadoIA.estadoDestino}
@@ -260,44 +275,41 @@ async function finalizarOrcamento(from) {
 🤖 *Análise:*
 ${resultadoIA.explicacao}
 
-${sessao.dados.lista_objetos ? `\n📝 *Lista de Objetos:*\n${sessao.dados.lista_objetos}\n` : ''}
-${sessao.dados.data_estimada ? `\n📅 *Data Estimada:* ${new Date(sessao.dados.data_estimada).toLocaleDateString('pt-BR')}\n` : ''}
-━━━━━━━━━━━━━━━━━
-${resultadoSalvamento && resultadoSalvamento.hotsites_notificados >= 1 && resultadoSalvamento.empresasNotificadas && resultadoSalvamento.empresasNotificadas.length > 0
-  ? (() => {
-      // Limitar a 5 empresas para não exceder limite do WhatsApp (4096 caracteres)
-      const empresasExibir = resultadoSalvamento.empresasNotificadas.slice(0, 5);
-      const totalEmpresas = resultadoSalvamento.empresasNotificadas.length;
-      const temMais = totalEmpresas > 5;
-      
-      let texto = `✨ *Empresas parceiras que receberam seu orçamento:*\n\n`;
-      texto += empresasExibir.map((empresa, index) => {
+${(() => {
+      if (!sessao.dados.data_estimada) return '';
+      const dataFormatada = validarEFormatarData(sessao.dados.data_estimada);
+      return dataFormatada ? `\n📅 *Data Estimada:* ${dataFormatada}\n` : '';
+    })()}
+
+Digite *nova cotação* para fazer outro orçamento.
+    `.trim();
+    
+    // Enviar primeira mensagem com o resultado do orçamento
+    await enviarMensagem(from, resultado);
+    
+    // Enviar segunda mensagem com a lista de empresas (se houver)
+    if (resultadoSalvamento && resultadoSalvamento.hotsites_notificados >= 1 && resultadoSalvamento.empresasNotificadas && resultadoSalvamento.empresasNotificadas.length > 0) {
+      const mensagemEmpresas = `✨ *Empresas parceiras que receberam seu orçamento:*\n\n${resultadoSalvamento.empresasNotificadas.map((empresa) => {
         // Compatibilidade: empresa pode ser string ou objeto
         const nomeEmpresa = typeof empresa === 'string' ? empresa : (empresa.nome || 'Empresa');
         const linkWhatsApp = typeof empresa === 'object' ? empresa.linkWhatsApp : null;
         
-        const linha = `${index + 1}. ${nomeEmpresa}`;
+        // Prevenir que números no nome sejam clicáveis
+        const nomeEmpresaFormatado = prevenirNumerosClicaveis(nomeEmpresa);
+        
+        const linha = `- ${nomeEmpresaFormatado}`;
         // Se tem link do WhatsApp, adicionar embaixo (apenas o link, sem texto extra)
         if (linkWhatsApp) {
           return `${linha}\n   ${linkWhatsApp}`;
         }
         return linha;
-      }).join('\n\n');
+      }).join('\n\n')}\n\n💬 *Elas entrarão em contato em breve!*`;
       
-      if (temMais) {
-        texto += `\n\n... e mais ${totalEmpresas - 5} empresa(s)`;
-      }
-      
-      texto += `\n\n💬 *Elas entrarão em contato em breve!*`;
-      
-      return texto;
-    })()
-  : `✨ *Empresas parceiras entrarão em contato em breve!*`}
-
-Digite *nova cotação* para fazer outro orçamento.
-    `.trim();
-    
-    await enviarMensagem(from, resultado);
+      await enviarMensagem(from, mensagemEmpresas);
+    } else {
+      // Se não houver empresas, enviar mensagem genérica
+      await enviarMensagem(from, '✨ *Empresas parceiras entrarão em contato em breve!*');
+    }
     
     // ✅ Limpar sessão (pessoa não receberá mais respostas automáticas)
     limparSessao(from);
