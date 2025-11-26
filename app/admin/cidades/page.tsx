@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/button';
 import { Plus } from 'lucide-react';
+import { createServerClient } from '@/lib/supabase/server';
+
+export const dynamic = 'force-dynamic';
 
 interface Cidade {
   id: string;
@@ -13,25 +16,59 @@ interface Cidade {
   updated_at: string;
 }
 
-async function getCidades(): Promise<Cidade[]> {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/admin/cidades`, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      throw new Error('Erro ao buscar cidades');
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error('Erro ao buscar cidades:', error);
-    return [];
-  }
-}
-
 export default async function CidadesPage() {
-  const cidades = await getCidades();
+  const supabase = createServerClient();
+
+  // Buscar cidades
+  const { data: cidadesData, error } = await supabase
+    .from('cidades')
+    .select(`
+      id,
+      nome,
+      slug,
+      estado,
+      created_at,
+      updated_at
+    `)
+    .order('nome', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao buscar cidades:', error);
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-semibold">Erro ao carregar cidades</p>
+          <p className="text-sm mt-1">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Contar hotsites e orçamentos para cada cidade
+  const cidades: Cidade[] = await Promise.all(
+    (cidadesData || []).map(async (cidade) => {
+      const { count: hotsitesCount } = await supabase
+        .from('hotsites')
+        .select('*', { count: 'exact', head: true })
+        .eq('cidade_id', cidade.id);
+
+      const { count: orcamentosCount } = await supabase
+        .from('orcamentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('cidade_id', cidade.id);
+
+      return {
+        id: cidade.id,
+        nome: cidade.nome,
+        slug: cidade.slug,
+        estado: cidade.estado || 'XX',
+        total_hotsites: hotsitesCount || 0,
+        total_orcamentos: orcamentosCount || 0,
+        created_at: cidade.created_at,
+        updated_at: cidade.updated_at,
+      };
+    })
+  );
   
   // Separar cidades com problema (estado XX)
   const cidadesComProblema = cidades.filter(c => c.estado === 'XX');
