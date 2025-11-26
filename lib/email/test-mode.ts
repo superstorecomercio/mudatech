@@ -6,6 +6,7 @@ interface TestEmailLog {
   html: string
   from: string
   fromName?: string
+  replyTo?: string
   timestamp: string
   provider: string
 }
@@ -217,6 +218,7 @@ export async function interceptTestEmail(
     html: string
     from: string
     fromName?: string
+    replyTo?: string
   },
   provider: string
 ): Promise<{ success: boolean; messageId?: string; error?: string; testMode?: boolean }> {
@@ -335,7 +337,7 @@ export async function getTestEmailLogs(): Promise<TestEmailLog[]> {
       // A tabela usa email_destinatario, não destinatario_email
       const emailDestinatario = item.email_destinatario || item.destinatario_email || ''
       const destinatarios = item.metadata?.destinatario_original || 
-                           (emailDestinatario.includes(',') ? emailDestinatario.split(',').map(e => e.trim()) : [emailDestinatario])
+                           (emailDestinatario.includes(',') ? emailDestinatario.split(',').map((e: string) => e.trim()) : [emailDestinatario])
       
       return {
         to: Array.isArray(destinatarios) ? destinatarios : [destinatarios],

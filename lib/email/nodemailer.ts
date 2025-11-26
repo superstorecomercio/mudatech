@@ -35,6 +35,7 @@ export async function sendEmail(
     // Dynamic import com tratamento de erro silencioso
     let nodemailer: any
     try {
+      // @ts-expect-error - Módulo opcional, pode não estar instalado
       const nodemailerModule = await import('nodemailer')
       nodemailer = nodemailerModule.default || nodemailerModule
       if (!nodemailer) {

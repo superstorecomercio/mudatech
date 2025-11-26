@@ -93,7 +93,7 @@ export async function sendEmail(
 
   try {
     // Dynamic import para evitar erro se o pacote não estiver instalado
-    // @ts-ignore - Dynamic import pode não estar disponível e tipos podem não existir
+    // @ts-ignore - Módulo opcional, pode não estar instalado (ignorar erro de tipo durante build)
     const { SocketLabsClient, EmailAddress, BasicMessage } = await import('@socketlabs/email')
     
     console.log('📧 [SocketLabs] Iniciando envio:', {
@@ -108,6 +108,7 @@ export async function sendEmail(
     })
 
     // IMPORTANTE: SocketLabsClient espera Server ID como NUMBER e API Key como string limpa
+    // @ts-expect-error - SocketLabsClient pode aceitar number ou string, tipos podem variar
     const client = new SocketLabsClient(serverIdNum, cleanApiKey)
 
     // Criar mensagem usando BasicMessage (formato oficial do SocketLabs)
@@ -209,7 +210,7 @@ export async function sendEmail(
           response: {
             transactionReceipt: response.transactionReceipt,
             messageId: response.messageId,
-            responseCode: response.responseCode,
+            responseCode: (response as any).responseCode,
             errorCode: response.errorCode
           }
         }

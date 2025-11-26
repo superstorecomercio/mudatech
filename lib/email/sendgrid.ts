@@ -30,6 +30,7 @@ export async function sendEmail(
     // Dynamic import com tratamento de erro silencioso
     let sgMail: any
     try {
+      // @ts-expect-error - Módulo opcional, pode não estar instalado
       const sgMailModule = await import('@sendgrid/mail')
       sgMail = sgMailModule.default || sgMailModule
       if (!sgMail) {

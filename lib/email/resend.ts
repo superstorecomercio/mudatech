@@ -30,6 +30,7 @@ export async function sendEmail(
     // Dynamic import com tratamento de erro silencioso
     let Resend: any
     try {
+      // @ts-expect-error - Módulo opcional, pode não estar instalado
       const resendModule = await import('resend')
       Resend = resendModule.Resend || (resendModule as any).default?.Resend || (resendModule as any).default
       if (!Resend) {
