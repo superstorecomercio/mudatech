@@ -27,6 +27,7 @@ export async function sendEmail(
 
   try {
     // Dynamic import para evitar erro se o pacote não estiver instalado
+    // @ts-ignore - Dynamic import pode não estar disponível
     const { Resend } = await import('resend')
     
     const resend = new Resend(config.apiKey)

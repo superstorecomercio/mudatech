@@ -97,7 +97,7 @@ export default async function OrcamentosPage({
         query = query.ilike('codigo_orcamento', `%${search}%`)
       } else if (searchType === 'data') {
         // Tentar parsear a data em diferentes formatos
-        let year: number, month: number, day: number
+        let year: number | undefined, month: number | undefined, day: number | undefined
         
         // Formato DD/MM/AAAA ou DD-MM-AAAA
         const dateMatch = search.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/)
@@ -114,7 +114,7 @@ export default async function OrcamentosPage({
           }
         }
 
-        if (year && month && day) {
+        if (year !== undefined && month !== undefined && day !== undefined) {
           // Criar datas no timezone local e converter para UTC corretamente
           // Isso garante que 24/11 no Brasil seja buscado corretamente
           const startDate = new Date(year, month - 1, day, 0, 0, 0, 0)
