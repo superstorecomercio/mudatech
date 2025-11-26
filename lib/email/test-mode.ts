@@ -20,8 +20,8 @@ let configLoaded = false
 /**
  * Define a configuração do modo de teste (chamado pela API)
  */
-export function setTestModeConfig(enabled: boolean) {
-  testModeConfig = { enabled }
+export function setTestModeConfig(enabled: boolean, testEmail?: string) {
+  testModeConfig = { enabled, testEmail }
   configLoaded = true
 }
 
@@ -36,14 +36,28 @@ export async function loadTestModeConfig() {
     const { createAdminClient } = await import('@/lib/supabase/server')
     const supabase = createAdminClient()
 
-    const { data } = await supabase
+    // Buscar configuração do modo de teste
+    const { data: testModeData } = await supabase
       .from('configuracoes')
       .select('valor')
       .eq('chave', 'email_test_mode')
       .single()
 
-    if (data?.valor?.enabled !== undefined) {
-      testModeConfig = { enabled: data.valor.enabled }
+    // Buscar configuração de email para obter test_email
+    const { data: emailConfigData } = await supabase
+      .from('configuracoes')
+      .select('valor')
+      .eq('chave', 'email_config')
+      .single()
+
+    if (testModeData?.valor?.enabled !== undefined) {
+      const emailConfig = emailConfigData?.valor
+      const testEmail = emailConfig?.test_email || process.env.EMAIL_TEST_TO || process.env.ADMIN_EMAIL
+      
+      testModeConfig = { 
+        enabled: testModeData.valor.enabled,
+        testEmail: testEmail || undefined
+      }
       configLoaded = true
     }
   } catch (error) {
@@ -84,9 +98,29 @@ export function isTestMode(): boolean {
 
 /**
  * Obtém o email de teste (redireciona todos os emails para este)
+ * Prioridade:
+ * 1. Email configurado no banco de dados (via email_config.test_email)
+ * 2. Variável de ambiente EMAIL_TEST_TO
+ * 3. Variável de ambiente ADMIN_EMAIL
+ * 4. Email padrão
  */
 export function getTestEmail(): string {
-  return process.env.EMAIL_TEST_TO || process.env.ADMIN_EMAIL || 'test@mudatech.com.br'
+  // 1. Verificar se há email configurado no cache
+  if (testModeConfig?.testEmail) {
+    return testModeConfig.testEmail
+  }
+  
+  // 2. Verificar variáveis de ambiente
+  if (process.env.EMAIL_TEST_TO) {
+    return process.env.EMAIL_TEST_TO
+  }
+  
+  if (process.env.ADMIN_EMAIL) {
+    return process.env.ADMIN_EMAIL
+  }
+  
+  // 3. Email padrão
+  return 'test@mudatech.com.br'
 }
 
 /**

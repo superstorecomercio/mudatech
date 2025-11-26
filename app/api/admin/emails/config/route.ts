@@ -26,6 +26,7 @@ export async function GET() {
           from_email: process.env.EMAIL_FROM || '',
           from_name: 'MudaTech',
           reply_to: process.env.EMAIL_REPLY_TO || '',
+          test_email: process.env.EMAIL_TEST_TO || process.env.ADMIN_EMAIL || '',
           ativo: false,
           testado: false
         }
@@ -45,6 +46,7 @@ export async function GET() {
       from_email: configValue.from_email || '',
       from_name: configValue.from_name || 'MudaTech',
       reply_to: configValue.reply_to || '',
+      test_email: configValue.test_email || process.env.EMAIL_TEST_TO || process.env.ADMIN_EMAIL || '',
       ativo: configValue.ativo || false,
       testado: configValue.testado || false,
       ultimo_teste: configValue.ultimo_teste || null,
@@ -108,6 +110,7 @@ export async function POST(request: NextRequest) {
       from_email: config.from_email,
       from_name: config.from_name || 'MudaTech',
       reply_to: config.reply_to || '',
+      test_email: config.test_email || null, // Email para modo de teste
       ativo: config.ativo || false,
       testado: config.testado || false,
       ultimo_teste: config.ultimo_teste || null,

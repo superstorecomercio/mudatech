@@ -13,6 +13,7 @@ interface EmailConfig {
   from_email: string
   from_name: string
   reply_to: string
+  test_email?: string // Email para modo de teste
   ativo: boolean
   testado: boolean
   ultimo_teste?: string
@@ -131,6 +132,7 @@ export default function EmailConfigPage() {
     from_email: '',
     from_name: 'MudaTech',
     reply_to: '',
+    test_email: process.env.NEXT_PUBLIC_EMAIL_TEST_TO || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '',
     ativo: false,
     testado: false
   })
@@ -180,7 +182,7 @@ export default function EmailConfigPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar configuração:', error)
-      // Em caso de erro, usar valores padrão
+        // Em caso de erro, usar valores padrão
       setConfig({
         provider: null,
         api_key: '',
@@ -188,6 +190,7 @@ export default function EmailConfigPage() {
         from_email: process.env.NEXT_PUBLIC_EMAIL_FROM || '',
         from_name: 'MudaTech',
         reply_to: process.env.NEXT_PUBLIC_EMAIL_REPLY_TO || '',
+        test_email: process.env.NEXT_PUBLIC_EMAIL_TEST_TO || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '',
         ativo: false,
         testado: false
       })
@@ -417,6 +420,23 @@ export default function EmailConfigPage() {
           />
           <p className="text-xs text-gray-500 mt-1">
             Email que receberá as respostas (opcional)
+          </p>
+        </div>
+
+        {/* Test Email */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email para Modo de Teste
+          </label>
+          <input
+            type="email"
+            value={config.test_email || ''}
+            onChange={(e) => setConfig(prev => ({ ...prev, test_email: e.target.value }))}
+            placeholder="teste@mudatech.com.br"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Quando o modo de teste estiver ativo, todos os emails serão redirecionados para este endereço (opcional)
           </p>
         </div>
 
