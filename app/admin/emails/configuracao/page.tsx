@@ -145,21 +145,32 @@ export default function EmailConfigPage() {
   const loadConfig = async () => {
     try {
       setLoading(true)
-      // Buscar configuração (vamos criar uma tabela para isso)
-      // Por enquanto, vamos usar variáveis de ambiente como fallback
-      const { data, error } = await supabase
-        .from('configuracoes')
-        .select('*')
-        .eq('chave', 'email_config')
-        .single()
+      
+      // Usar a API route para buscar configuração (garante consistência)
+      const response = await fetch('/api/admin/emails/config')
+      const result = await response.json()
 
-      if (data && !error) {
-        setConfig(data.valor as EmailConfig)
+      if (response.ok && result.config) {
+        // Garantir que todos os campos estão presentes
+        const loadedConfig: EmailConfig = {
+          provider: result.config.provider || null,
+          api_key: result.config.api_key || '',
+          server_id: result.config.server_id || '',
+          from_email: result.config.from_email || '',
+          from_name: result.config.from_name || 'MudaTech',
+          reply_to: result.config.reply_to || '',
+          ativo: result.config.ativo || false,
+          testado: result.config.testado || false,
+          ultimo_teste: result.config.ultimo_teste,
+          erro_teste: result.config.erro_teste
+        }
+        setConfig(loadedConfig)
       } else {
         // Se não existe, usar valores padrão
         setConfig({
           provider: null,
           api_key: '',
+          server_id: '',
           from_email: process.env.NEXT_PUBLIC_EMAIL_FROM || '',
           from_name: 'MudaTech',
           reply_to: process.env.NEXT_PUBLIC_EMAIL_REPLY_TO || '',
@@ -169,6 +180,17 @@ export default function EmailConfigPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar configuração:', error)
+      // Em caso de erro, usar valores padrão
+      setConfig({
+        provider: null,
+        api_key: '',
+        server_id: '',
+        from_email: process.env.NEXT_PUBLIC_EMAIL_FROM || '',
+        from_name: 'MudaTech',
+        reply_to: process.env.NEXT_PUBLIC_EMAIL_REPLY_TO || '',
+        ativo: false,
+        testado: false
+      })
     } finally {
       setLoading(false)
     }
@@ -190,7 +212,8 @@ export default function EmailConfigPage() {
       }
 
       alert('Configuração salva com sucesso!')
-      setConfig(prev => ({ ...prev, ...data.config }))
+      // Recarregar configuração do servidor para garantir sincronização
+      await loadConfig()
     } catch (error: any) {
       alert(`Erro ao salvar: ${error.message}`)
     } finally {
