@@ -3,7 +3,9 @@ import { Button } from '@/app/components/ui/button';
 import { Plus } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 
+// Forçar renderização dinâmica - não usar fetch para localhost
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface Cidade {
   id: string;

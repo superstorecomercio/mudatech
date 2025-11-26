@@ -10,7 +10,7 @@ const QuemSomosPage = () => {
           </h2>
           <p className="text-gray-700 leading-relaxed mb-4">
             O MudaTech é uma plataforma dedicada a conectar pessoas que
-            precisam de serviços de mudança com empresas confiáveis e
+            precisam de serviços de mudança com empresas confiáveis e 
             especializadas em todo o Brasil.
           </p>
           <p className="text-gray-700 leading-relaxed">
