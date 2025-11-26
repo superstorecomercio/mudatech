@@ -6,7 +6,7 @@ import { Star, Check, Shield, Zap, Building2, Package, MessageCircle, TrendingUp
 import Link from "next/link"
 import { useState, useEffect } from "react"
 
-const WHATSAPP_URL = "https://wa.me/15551842523?text=Ol%C3%A1,%20quero%20calcular%20a%20minha%20mudan%C3%A7a!"
+const WHATSAPP_URL = "https://wa.me/5515551842523?text=Oi,%20quero%20fazer%20um%20or%C3%A7amento%20de%20mudan%C3%A7a!"
 
 // Função para gerar um número dinâmico que muda a cada hora
 const getPessoasSolicitaram = () => {
@@ -177,10 +177,10 @@ function TestimonialsCarousel() {
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-6 px-8 md:px-0">
           {currentTestimonials.map((testimonial, i) => (
-            <Card key={`${currentIndex}-${i}`} className="p-6 bg-white border-l-4 border-[#667eea] border-0 shadow-[0_10px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_50px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-3">
+            <Card key={`${currentIndex}-${i}`} className="p-6 bg-white border-0 shadow-md hover:shadow-lg transition-shadow">
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-[#FFD700] text-[#FFD700] drop-shadow-[0_2px_4px_rgba(255,215,0,0.5)] stroke-black stroke-[1]" />
+                  <Star key={j} className="w-4 h-4 fill-[#FF6B35] text-[#FF6B35]" />
                 ))}
               </div>
               <p className="text-gray-700 mb-4 italic leading-relaxed">&quot;{testimonial.text}&quot;</p>
@@ -208,7 +208,7 @@ function TestimonialsCarousel() {
             onClick={() => goToSlide(index)}
             className={`w-2 h-2 rounded-full transition-all ${
               index === currentIndex
-                ? "bg-[#667eea] w-8"
+                ? "bg-[#FF6B35] w-8"
                 : "bg-gray-300 hover:bg-gray-400"
             }`}
             aria-label={`Ir para slide ${index + 1}`}
@@ -274,78 +274,78 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-animated">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-12 md:py-32 pt-8 md:pt-16">
+      <section className="container mx-auto px-4 py-8 md:py-20 pt-4 md:pt-8">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge: Comparar e Receber Cotações */}
-          <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full mb-8 animate-fade-in-up shadow-lg">
-            <Building2 className="w-4 h-4 text-[#667eea]" />
-            <span className="text-sm font-medium text-gray-800">Compare preços e receba cotações de empresas verificadas</span>
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-4 py-2 rounded-full mb-6 animate-fade-in-up">
+            <Building2 className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-700">Compare preços e receba cotações de empresas verificadas</span>
           </div>
 
           {/* Rating */}
-          <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg mb-10 animate-fade-in-up animation-delay-100">
+          <div className="inline-flex items-center gap-2 bg-gray-50 px-6 py-3 rounded-full shadow-sm mb-8 animate-fade-in-up animation-delay-100">
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-[#FFD700] text-[#FFD700] drop-shadow-[0_2px_4px_rgba(255,215,0,0.5)] stroke-black stroke-[1]" />
+                <Star key={i} className="w-5 h-5 fill-[#FF6B35] text-[#FF6B35]" />
               ))}
             </div>
-            <span className="text-sm font-bold text-gray-900">4.9/5 - Mais de 10.000 orçamentos realizados</span>
+            <span className="text-sm font-semibold text-gray-900">4.9/5 - Mais de 10.000 orçamentos realizados</span>
           </div>
 
           {/* Main Title */}
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 animate-fade-in-up animation-delay-200 text-balance drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
-            Calcule o preço da sua mudança <span className="text-[#FFD700]">em segundos</span>
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 animate-fade-in-up animation-delay-200 text-balance">
+            Calcule o preço da sua mudança <span className="text-[#FF6B35]">em segundos</span>
           </h1>
 
-          <p className="text-xl md:text-3xl text-white/95 mb-12 animate-fade-in-up animation-delay-300 text-balance font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          <p className="text-xl md:text-2xl text-gray-600 mb-10 animate-fade-in-up animation-delay-300 text-balance">
             Descubra o valor real da sua mudança em 60 segundos pelo WhatsApp
           </p>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 text-white animate-fade-in-up animation-delay-400">
-            <div className="flex items-center gap-2 text-sm md:text-base font-semibold">
-              <Check className="w-5 h-5 text-[#FFD700]" />
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10 text-gray-600 animate-fade-in-up animation-delay-400">
+            <div className="flex items-center gap-2 text-sm md:text-base">
+              <Check className="w-5 h-5 text-[#FF6B35]" />
               <span>Grátis</span>
             </div>
-            <div className="flex items-center gap-2 text-sm md:text-base font-semibold">
-              <Check className="w-5 h-5 text-[#FFD700]" />
+            <div className="flex items-center gap-2 text-sm md:text-base">
+              <Check className="w-5 h-5 text-[#FF6B35]" />
               <span>Rápido</span>
             </div>
-            <div className="flex items-center gap-2 text-sm md:text-base font-semibold">
-              <Check className="w-5 h-5 text-[#FFD700]" />
+            <div className="flex items-center gap-2 text-sm md:text-base">
+              <Check className="w-5 h-5 text-[#FF6B35]" />
               <span>Sem Cadastro</span>
             </div>
           </div>
 
-          {/* CTA Button - PREMIUM */}
+          {/* CTA Button */}
           <a
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block animate-fade-in-up animation-delay-500"
           >
-            <button
-              className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white text-xl md:text-2xl px-[60px] py-[25px] rounded-2xl shadow-[0_15px_50px_rgba(37,211,102,0.5)] hover:shadow-[0_20px_60px_rgba(37,211,102,0.7)] hover:scale-110 transition-all duration-300 font-extrabold animate-glow"
+            <Button
+              size="lg"
+              className="bg-[#25D366] hover:bg-[#20BD5A] text-white text-lg md:text-xl px-12 py-7 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-bold"
             >
               💬 Calcular no WhatsApp Grátis
-            </button>
+            </Button>
           </a>
 
-          {/* Urgency Badge - GRADIENT LARANJA/VERMELHO COM FOGO */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF6B35] via-[#FF4500] to-[#FF1744] text-white px-8 py-4 rounded-full font-extrabold mt-8 animate-fade-in-up animation-delay-600 shadow-[0_8px_30px_rgba(255,107,53,0.4)]">
-            <span className="animate-fire text-2xl">🔥</span>
-            <span>{pessoasSolicitaram} pessoas solicitaram orçamento hoje</span>
+          {/* Urgency Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#FF6B35]/10 text-[#FF6B35] px-6 py-3 rounded-full font-semibold mt-6 animate-fade-in-up animation-delay-600">
+            🔥 {pessoasSolicitaram} pessoas solicitaram orçamento hoje
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="bg-white/95 backdrop-blur-sm py-24 md:py-36">
+      <section className="bg-gray-50 py-12 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Como Funciona</h2>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-5xl mx-auto">
+          <h2 className="text-2xl md:text-4xl font-bold text-center text-gray-900 mb-8 md:mb-12">Como Funciona</h2>
+          <div className="grid md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
             {[
               { icon: "📱", title: "Clique no Botão", desc: "Em 2 segundos você já está conversando" },
               {
@@ -361,11 +361,11 @@ export default function Home() {
             ].map((step, i) => (
               <Card
                 key={i}
-                className="p-6 md:p-10 text-center bg-white border-l-4 border-[#667eea] border-0 shadow-[0_10px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_50px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-3"
+                className="p-4 md:p-8 text-center bg-white border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
               >
-                <div className="text-5xl md:text-7xl mb-4 md:mb-6">{step.icon}</div>
-                <h3 className="text-xl md:text-2xl font-extrabold mb-3 md:mb-4 text-gray-900">{step.title}</h3>
-                <p className="text-base md:text-lg text-gray-600 font-medium">{step.desc}</p>
+                <div className="text-4xl md:text-6xl mb-3 md:mb-4">{step.icon}</div>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-gray-900">{step.title}</h3>
+                <p className="text-sm md:text-base text-gray-600">{step.desc}</p>
               </Card>
             ))}
           </div>
@@ -373,9 +373,9 @@ export default function Home() {
       </section>
 
       {/* Benefits */}
-      <section className="container mx-auto px-4 py-24 md:py-36">
-        <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Por Que Escolher o MudaTech?</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <section className="container mx-auto px-4 py-16 md:py-24">
+        <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">Por Que Escolher o MudaTech?</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {[
             {
               icon: TrendingUp,
@@ -396,11 +396,11 @@ export default function Home() {
             return (
               <Card
                 key={i}
-                className="p-8 bg-white border-l-4 border-[#667eea] border-0 shadow-[0_10px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_50px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-3"
+                className="p-6 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
               >
-                <Icon className="w-14 h-14 text-[#667eea] mb-5" />
-                <h3 className="text-xl font-extrabold mb-3 text-gray-900">{benefit.title}</h3>
-                <p className="text-gray-600 text-base font-medium">{benefit.desc}</p>
+                <Icon className="w-12 h-12 text-[#FF6B35] mb-4" />
+                <h3 className="text-lg font-bold mb-2 text-gray-900">{benefit.title}</h3>
+                <p className="text-gray-600 text-sm">{benefit.desc}</p>
               </Card>
             )
           })}
@@ -408,9 +408,9 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-white/95 backdrop-blur-sm py-24 md:py-36">
+      <section className="bg-gray-50 py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
             O Que Nossos Clientes Dizem
           </h2>
           
@@ -419,18 +419,18 @@ export default function Home() {
       </section>
 
       {/* Seção de Cidades Populares */}
-      <section className="py-24 md:py-36 px-4 bg-gradient-to-br from-slate-50 to-white">
+      <section className="py-12 md:py-16 px-4 bg-gradient-to-br from-slate-50 to-white">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12 md:mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#667eea]/10 rounded-full mb-4">
-              <TrendingUp className="w-5 h-5 text-[#667eea]" />
-              <span className="text-sm font-bold text-[#667eea]">Buscas Populares</span>
+          <div className="text-center mb-8 md:mb-10 space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <span className="text-sm font-semibold text-primary">Buscas Populares</span>
             </div>
-            <h2 className="text-4xl lg:text-6xl font-extrabold text-gray-900">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
               Encontre Empresas nas Principais Cidades
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Acesse diretamente as empresas mais procuradas em cada cidade
             </p>
           </div>
@@ -441,7 +441,7 @@ export default function Home() {
               <Link
                 key={cidade.slug}
                 href={`/cidades/${cidade.slug}`}
-                className="group relative overflow-hidden rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_50px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-3 bg-white border-l-4 border-[#667eea] border-0 cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white border border-slate-200 cursor-pointer active:scale-[0.98]"
               >
                 {/* Imagem de Fundo */}
                 <div className="relative h-48 overflow-hidden">
@@ -474,7 +474,7 @@ export default function Home() {
                     {cidade.servicos.map((servico) => (
                       <span
                         key={servico}
-                        className="text-xs px-3 py-1 bg-[#667eea]/10 text-[#667eea] font-medium rounded-full"
+                        className="text-xs px-3 py-1 bg-accent/10 text-accent font-medium rounded-full"
                       >
                         {servico}
                       </span>
@@ -483,7 +483,7 @@ export default function Home() {
 
                   {/* Link */}
                   <div className="pt-2">
-                    <span className="text-sm font-semibold text-[#667eea] group-hover:text-[#764ba2] transition-colors inline-flex items-center gap-1">
+                    <span className="text-sm font-semibold text-primary group-hover:text-accent transition-colors inline-flex items-center gap-1">
                       Ver empresas
                       <span className="group-hover:translate-x-1 transition-transform">→</span>
                     </span>
@@ -494,10 +494,10 @@ export default function Home() {
           </div>
 
           {/* Link para todas as cidades */}
-          <div className="text-center mt-12 md:mt-16">
+          <div className="text-center mt-8 md:mt-10">
             <Link
               href="/cidades"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-[#667eea] text-[#667eea] font-extrabold rounded-xl hover:bg-gradient-to-r hover:from-[#667eea] hover:to-[#764ba2] hover:text-white transition-all duration-300 shadow-[0_10px_40px_rgba(102,126,234,0.3)] hover:shadow-[0_15px_50px_rgba(102,126,234,0.5)]"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-primary text-primary font-semibold rounded-xl hover:bg-primary hover:text-white transition-all duration-300 shadow-md hover:shadow-xl"
             >
               <MapPin className="w-5 h-5" />
               Ver todas as cidades
@@ -507,24 +507,24 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="bg-gradient-animated py-24 md:py-36">
+      <section className="bg-gray-50 py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl md:text-7xl font-extrabold text-white mb-10 text-balance drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 text-balance">
               Pronto Para Saber o Valor da Sua Mudança?
             </h2>
 
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-block mb-8">
-              <button
-                className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white text-xl md:text-2xl px-[60px] py-[25px] rounded-2xl shadow-[0_15px_50px_rgba(37,211,102,0.5)] hover:shadow-[0_20px_60px_rgba(37,211,102,0.7)] hover:scale-110 transition-all duration-300 font-extrabold animate-glow"
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-block mb-6">
+              <Button
+                size="lg"
+                className="bg-[#25D366] hover:bg-[#20BD5A] text-white text-lg md:text-xl px-12 py-7 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-bold"
               >
                 💬 Começar Agora no WhatsApp
-              </button>
+              </Button>
             </a>
 
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF6B35] via-[#FF4500] to-[#FF1744] text-white px-8 py-4 rounded-full font-extrabold shadow-[0_8px_30px_rgba(255,107,53,0.4)]">
-              <span className="animate-fire text-2xl">⏰</span>
-              <span>Atenção: Vagas limitadas para orçamentos hoje!</span>
+            <div className="inline-flex items-center gap-2 bg-[#FF6B35]/10 text-[#FF6B35] px-6 py-3 rounded-full font-semibold">
+              ⏰ Atenção: Vagas limitadas para orçamentos hoje!
             </div>
           </div>
         </div>
@@ -532,3 +532,4 @@ export default function Home() {
     </div>
   )
 }
+

@@ -32,10 +32,10 @@ const Header = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="text-2xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+              <span className="text-[#667eea]">
                 Muda
               </span>
-              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-[#4facfe]">
                 Tech
               </span>
             </div>

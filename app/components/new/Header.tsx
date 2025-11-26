@@ -14,10 +14,10 @@ export function Header() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           <Link href="/" className="flex items-center group">
             <div className="text-2xl lg:text-3xl font-bold tracking-tight transition-transform group-hover:scale-105">
-              <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+              <span className="text-[#667eea]">
                 Muda
               </span>
-              <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-[#4facfe]">
                 Tech
               </span>
             </div>
@@ -54,8 +54,8 @@ export function Header() {
           {/* CTA Button */}
           <div className="hidden lg:block">
             <Link href="/orcamento">
-              <Button size="lg" className="rounded-full font-semibold">
-                Solicitar Orçamento
+              <Button size="lg" className="rounded-full font-semibold bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:from-[#764ba2] hover:to-[#667eea] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                Cadastre sua empresa
               </Button>
             </Link>
           </div>
@@ -100,8 +100,8 @@ export function Header() {
               </Link>
               <Link href="/orcamento" onClick={() => setMobileMenuOpen(false)}
 >
-                <Button size="lg" className="rounded-full font-semibold w-full mt-2">
-                  Solicitar Orçamento
+                <Button size="lg" className="rounded-full font-semibold w-full mt-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:from-[#764ba2] hover:to-[#667eea] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                  Cadastre sua empresa
                 </Button>
               </Link>
             </nav>

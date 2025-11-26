@@ -14,8 +14,37 @@ const PALAVRAS_ATIVACAO = [
 ];
 
 function ehMensagemAtivacao(mensagem) {
-  const msgLower = mensagem.toLowerCase().trim();
-  return PALAVRAS_ATIVACAO.some(palavra => msgLower.includes(palavra));
+  if (!mensagem || typeof mensagem !== 'string') {
+    return false;
+  }
+  
+  // Normalizar mensagem: remover acentos e converter para minúsculas
+  const msgNormalizada = mensagem
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .trim();
+  
+  // Verificar se contém "calcular" + "mudança" (com ou sem acento)
+  const temCalcular = msgNormalizada.includes('calcular');
+  const temMudanca = msgNormalizada.includes('mudanca') || msgNormalizada.includes('mudança');
+  
+  // Verificar se contém "olá" (com ou sem acento)
+  const temOla = msgNormalizada.includes('ola') || msgNormalizada.includes('olá');
+  
+  // Verificar palavras-chave simples
+  const temPalavraChave = PALAVRAS_ATIVACAO.some(palavra => {
+    const palavraNormalizada = palavra
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    return msgNormalizada.includes(palavraNormalizada);
+  });
+  
+  // Ativar se:
+  // 1. Contém "calcular" E "mudança" (com ou sem acento)
+  // 2. Contém "olá" (com ou sem acento)
+  // 3. Contém qualquer palavra-chave simples
+  return (temCalcular && temMudanca) || temOla || temPalavraChave;
 }
 
 // Validações
