@@ -86,7 +86,7 @@ export default function TestModePage() {
     return new Date(dateString).toLocaleString('pt-BR')
   }
 
-  if (!testModeActive && !loading) {
+  if (!testModeActive) {
     return (
       <div className="space-y-6">
         <div>
