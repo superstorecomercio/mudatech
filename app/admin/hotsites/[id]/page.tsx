@@ -45,17 +45,6 @@ export default async function HotsiteEditPage({ params }: HotsiteEditPageProps) 
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Editar Hotsite: {hotsite.nome_exibicao || 'Sem nome'}
-        </h1>
-        <p className="text-gray-600">
-          {hotsite.cidade && hotsite.estado && (
-            <>{hotsite.cidade} - {hotsite.estado}</>
-          )}
-        </p>
-      </div>
-
       <HotsiteEditForm
         hotsite={hotsite}
         cidades={cidadesUnicas}

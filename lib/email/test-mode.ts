@@ -14,15 +14,32 @@ interface TestEmailLog {
 const testEmailLogs: TestEmailLog[] = []
 
 // Cache da configuração do modo de teste (atualizado via API)
-let testModeConfig: { enabled: boolean } | null = null
+let testModeConfig: { enabled: boolean; testEmail?: string } | null = null
 let configLoaded = false
 
 /**
  * Define a configuração do modo de teste (chamado pela API)
+ * Também marca como carregado para evitar recarregamento desnecessário
  */
 export function setTestModeConfig(enabled: boolean, testEmail?: string) {
   testModeConfig = { enabled, testEmail }
   configLoaded = true
+  // Log apenas em desenvolvimento
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`✅ [Test Mode] Cache atualizado: ${enabled ? 'ATIVO' : 'INATIVO'}`)
+  }
+}
+
+/**
+ * Força recarregamento da configuração (invalida cache)
+ */
+export function resetTestModeConfig() {
+  configLoaded = false
+  testModeConfig = null
+  // Log apenas em desenvolvimento
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔄 [Test Mode] Cache invalidado')
+  }
 }
 
 /**
@@ -37,7 +54,7 @@ export async function loadTestModeConfig() {
     const supabase = createAdminClient()
 
     // Buscar configuração do modo de teste
-    const { data: testModeData } = await supabase
+    const { data: testModeData, error: testModeError } = await supabase
       .from('configuracoes')
       .select('valor')
       .eq('chave', 'email_test_mode')
@@ -50,19 +67,31 @@ export async function loadTestModeConfig() {
       .eq('chave', 'email_config')
       .single()
 
+    // Marcar como carregado mesmo se não encontrar configuração
+    configLoaded = true
+
     if (testModeData?.valor?.enabled !== undefined) {
       const emailConfig = emailConfigData?.valor
       const testEmail = emailConfig?.test_email || process.env.EMAIL_TEST_TO || process.env.ADMIN_EMAIL
       
+      const enabledValue = testModeData.valor.enabled === true
       testModeConfig = { 
-        enabled: testModeData.valor.enabled,
+        enabled: enabledValue,
         testEmail: testEmail || undefined
       }
-      configLoaded = true
+      // Log apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ [Test Mode] Configuração carregada: ${enabledValue ? 'ATIVO' : 'INATIVO'}`)
+      }
+    } else {
+      // Se não encontrou configuração no banco, marcar como null (não usar NODE_ENV como padrão)
+      testModeConfig = null
     }
   } catch (error) {
-    // Se não conseguir carregar, usar lógica padrão
-    console.log('Não foi possível carregar configuração do modo de teste do banco, usando padrão')
+    // Se não conseguir carregar, marcar como carregado mas sem configuração
+    configLoaded = true
+    testModeConfig = null
+    console.error('⚠️ [Test Mode] Erro ao carregar configuração do banco:', error)
   }
 }
 
@@ -73,13 +102,68 @@ export async function loadTestModeConfig() {
  * 2. Variável de ambiente EMAIL_TEST_MODE
  * 3. NODE_ENV === 'development' (apenas se não houver configuração explícita)
  */
-export function isTestMode(): boolean {
+export async function isTestMode(): Promise<boolean> {
+  // Tentar carregar configuração do banco se ainda não foi carregada
+  if (!configLoaded) {
+    await loadTestModeConfig()
+  }
+  
   // 1. Verificar configuração do banco (se disponível)
   if (testModeConfig !== null) {
-    return testModeConfig.enabled
+    const isEnabled = testModeConfig.enabled === true
+    console.log('📧 [Test Mode] Usando configuração do banco:', {
+      enabled: isEnabled,
+      rawValue: testModeConfig.enabled,
+      type: typeof testModeConfig.enabled
+    })
+    return isEnabled
   }
   
   // 2. Verificar variável de ambiente (sobrescreve desenvolvimento)
+  if (process.env.EMAIL_TEST_MODE === 'true' || process.env.EMAIL_TEST_MODE === '1') {
+    console.log('📧 [Test Mode] Usando variável de ambiente: true')
+    return true
+  }
+  
+  if (process.env.EMAIL_TEST_MODE === 'false' || process.env.EMAIL_TEST_MODE === '0') {
+    console.log('📧 [Test Mode] Usando variável de ambiente: false')
+    return false
+  }
+  
+  // 3. Se já carregou do banco e não encontrou configuração, não usar NODE_ENV como padrão
+  // Isso garante que se o usuário desativou no painel, não será ativado automaticamente
+  if (configLoaded) {
+    console.log('📧 [Test Mode] Configuração carregada mas não encontrada, retornando false')
+    return false
+  }
+  
+  // 4. Apenas usar NODE_ENV se ainda não carregou do banco (fallback temporário)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('📧 [Test Mode] Usando NODE_ENV como fallback: development = true')
+    return true
+  }
+  
+  console.log('📧 [Test Mode] Nenhuma configuração encontrada, retornando false')
+  return false
+}
+
+/**
+ * Versão síncrona (para compatibilidade) - tenta usar cache
+ * ATENÇÃO: Pode retornar resultado incorreto se a configuração não foi carregada
+ * Use isTestMode() assíncrona sempre que possível
+ */
+export function isTestModeSync(): boolean {
+  // Se já foi carregado e há configuração, usar ela
+  if (configLoaded && testModeConfig !== null) {
+    return testModeConfig.enabled
+  }
+  
+  // Se já foi carregado mas não há configuração, retornar false (não usar NODE_ENV)
+  if (configLoaded && testModeConfig === null) {
+    return false
+  }
+  
+  // Se não foi carregado ainda, verificar variável de ambiente
   if (process.env.EMAIL_TEST_MODE === 'true' || process.env.EMAIL_TEST_MODE === '1') {
     return true
   }
@@ -88,7 +172,7 @@ export function isTestMode(): boolean {
     return false
   }
   
-  // 3. Verificar se está em desenvolvimento (apenas se não houver configuração explícita)
+  // Se não foi carregado e não há variável de ambiente, usar NODE_ENV como fallback
   if (process.env.NODE_ENV === 'development') {
     return true
   }
@@ -178,6 +262,10 @@ export async function interceptTestEmail(
         provider,
         from: options.from,
         fromName: options.fromName,
+        replyTo: options.replyTo || options.from,
+        to: Array.isArray(originalTo) ? originalTo.join(', ') : originalTo,
+        subject: options.subject,
+        html_completo: options.html, // Salvar HTML completo
         html_preview: options.html.substring(0, 500) // Salvar preview do HTML
       }
     }).select()
@@ -208,11 +296,10 @@ export async function interceptTestEmail(
   const modifiedHtml = testModeWarning + options.html
   
   // Retornar sucesso simulado (não envia realmente)
-  console.log('📧 [TEST MODE] Email interceptado:')
-  console.log('   Para:', originalTo.join(', '))
-  console.log('   Assunto:', options.subject)
-  console.log('   Redirecionado para:', testEmail)
-  console.log('   Provider:', provider)
+  // Log apenas em desenvolvimento para não poluir o terminal
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📧 [TEST MODE] Email interceptado: ${originalTo.join(', ')} -> ${testEmail} (${provider})`)
+  }
   
   return {
     success: true,
@@ -238,13 +325,10 @@ export async function getTestEmailLogs(): Promise<TestEmailLog[]> {
       .limit(100)
     
     if (error) {
-      console.error('Erro ao buscar logs de teste:', error)
-      console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
+      console.error('❌ [TEST MODE] Erro ao buscar logs de teste:', error)
       // Fallback para cache em memória
       return [...testEmailLogs]
     }
-    
-    console.log(`📧 [TEST MODE] Encontrados ${data?.length || 0} logs de teste no banco`)
     
     // Converter para formato TestEmailLog
     const logs = (data || []).map(item => {

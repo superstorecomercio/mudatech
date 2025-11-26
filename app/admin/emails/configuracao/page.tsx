@@ -29,16 +29,28 @@ function TestModeWarning() {
     loadStatus()
   }, [])
 
-  const loadStatus = () => {
-    fetch('/api/admin/emails/test-mode/status')
-      .then(res => res.json())
-      .then(data => {
-        setTestModeActive(data.active || false)
+  const loadStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/emails/test-mode/status')
+      const data = await res.json()
+      
+      // Garantir que active seja boolean explícito
+      const isActive = data.active === true
+      setTestModeActive(isActive)
+      
+      // Usar testEmail da resposta se disponível
+      if (data.testEmail) {
+        setTestEmail(data.testEmail)
+      } else {
         setTestEmail(process.env.NEXT_PUBLIC_EMAIL_TEST_TO || process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'test@mudatech.com.br')
-      })
-      .catch(() => {
-        setTestModeActive(process.env.NEXT_PUBLIC_EMAIL_TEST_MODE === 'true')
-      })
+      }
+      
+      console.log('📧 [Config Page] Modo de teste:', isActive, 'Source:', data.source)
+    } catch (error) {
+      console.error('Erro ao carregar status do modo de teste:', error)
+      // Fallback: verificar variável de ambiente
+      setTestModeActive(process.env.NEXT_PUBLIC_EMAIL_TEST_MODE === 'true')
+    }
   }
 
   const handleToggle = async () => {
@@ -56,8 +68,12 @@ function TestModeWarning() {
         throw new Error(data.error || 'Erro ao alterar modo de teste')
       }
 
-      setTestModeActive(data.enabled)
-      loadStatus() // Recarregar status
+      // Atualizar estado local e recarregar status do servidor
+      setTestModeActive(data.enabled === true)
+      // Aguardar um pouco antes de recarregar para garantir que o servidor processou
+      setTimeout(() => {
+        loadStatus()
+      }, 500)
     } catch (error: any) {
       alert(`Erro: ${error.message}`)
     } finally {
@@ -340,21 +356,48 @@ export default function EmailConfigPage() {
 
         {/* Server ID (SocketLabs) */}
         {config.provider === 'socketlabs' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Server ID *
-            </label>
-            <input
-              type="text"
-              value={config.server_id || ''}
-              onChange={(e) => setConfig(prev => ({ ...prev, server_id: e.target.value }))}
-              placeholder="12345"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Seu Server ID do SocketLabs (encontre no dashboard)
-            </p>
-          </div>
+          <>
+            {/* Aviso Informativo */}
+            <div className="col-span-full bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                    Informações sobre SocketLabs API
+                  </h4>
+                  <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                    <li><strong>Server ID</strong>: Número do seu servidor (ex: 12345). Encontre em Settings → Server Settings</li>
+                    <li><strong>API Key</strong>: Chave de API (não a senha SMTP). Crie em Settings → API Keys</li>
+                    <li><strong>From Email</strong>: Deve ser um email verificado no SocketLabs</li>
+                    <li>Estamos usando a <strong>API REST</strong> (não SMTP) para melhor performance e rastreamento</li>
+                  </ul>
+                  <Link 
+                    href="/docs/SOCKETLABS_API.md" 
+                    target="_blank"
+                    className="text-xs text-blue-600 hover:text-blue-800 underline mt-2 inline-block"
+                  >
+                    📖 Ver documentação completa
+                  </Link>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Server ID *
+              </label>
+              <input
+                type="text"
+                value={config.server_id || ''}
+                onChange={(e) => setConfig(prev => ({ ...prev, server_id: e.target.value }))}
+                placeholder="12345"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Seu Server ID do SocketLabs (encontre em Settings → Server Settings)
+              </p>
+            </div>
+          </>
         )}
 
         {/* API Key */}

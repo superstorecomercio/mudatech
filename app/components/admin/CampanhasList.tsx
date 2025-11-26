@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Campanha {
@@ -12,6 +12,7 @@ interface Campanha {
   plano_ordem: number;
   cidade_nome?: string;
   tipoempresa?: string;
+  email?: string;
   data_inicio: string;
   data_fim?: string;
   valor: number;
@@ -39,10 +40,12 @@ interface CampanhasListProps {
   campanhas: Campanha[];
   hotsites: Hotsite[];
   planos: Plano[];
+  onFilteredCampanhasChange?: (filtered: Campanha[]) => void;
 }
 
-export default function CampanhasList({ campanhas: initialCampanhas, hotsites, planos }: CampanhasListProps) {
+export default function CampanhasList({ campanhas: initialCampanhas, hotsites, planos, onFilteredCampanhasChange }: CampanhasListProps) {
   const router = useRouter();
+  const [campanhas, setCampanhas] = useState<Campanha[]>(initialCampanhas);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'ativas' | 'inativas'>('todos');
   const [filterPlano, setFilterPlano] = useState<string>('todos');
@@ -54,6 +57,11 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
   const [loading, setLoading] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [hotsiteSearchTerm, setHotsiteSearchTerm] = useState('');
+
+  // Atualizar estado quando initialCampanhas mudar (vindo do componente pai)
+  useEffect(() => {
+    setCampanhas(initialCampanhas);
+  }, [initialCampanhas]);
   const [newCampanhaData, setNewCampanhaData] = useState({
     hotsite_id: '',
     plano_id: '',
@@ -61,7 +69,7 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
     data_fim: '',
     valor_total: 0, // Será convertido para valor_mensal no backend
     participa_cotacao: true,
-    limite_orcamentos_mes: null as number | null,
+      // limite_orcamentos_mes removido do formulário (não usado por enquanto)
   });
 
   // Extrair planos únicos
@@ -128,6 +136,12 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
 
     // Ordenação
     filtered = [...filtered].sort((a, b) => {
+      // Primeiro, ordenar por status: ativas primeiro, inativas no final
+      if (a.ativo !== b.ativo) {
+        return a.ativo ? -1 : 1; // Ativas primeiro (retorna -1), inativas depois (retorna 1)
+      }
+
+      // Se ambas têm o mesmo status, ordenar pelo critério selecionado
       let compareA: any;
       let compareB: any;
 
@@ -160,6 +174,14 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
     return filtered;
   }, [initialCampanhas, searchTerm, filterStatus, filterPlano, filterCidade, sortBy, sortOrder]);
 
+  // Notificar componente pai sobre campanhas filtradas
+  useEffect(() => {
+    console.log('📊 [CampanhasList] Campanhas filtradas:', campanhasFiltradas.length);
+    if (onFilteredCampanhasChange) {
+      onFilteredCampanhasChange(campanhasFiltradas);
+    }
+  }, [campanhasFiltradas, onFilteredCampanhasChange]);
+
   const handleSort = (column: 'cidade' | 'empresa' | 'plano' | 'data') => {
     if (sortBy === column) {
       // Se já está ordenando por essa coluna, inverte a ordem
@@ -175,12 +197,13 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
     setEditingId(campanha.id);
     setEditData({
       hotsite_id: campanha.hotsite_id,
+      email: campanha.email || '', // Email do hotsite
       data_fim: campanha.data_fim || '',
       valor: campanha.valor,
-      ativo: campanha.ativo,
+      // Status (ativo) é alterado apenas pelo botão na lista, não no formulário de edição
       tipoempresa: campanha.tipoempresa || 'Empresa de Mudança',
       participa_cotacao: campanha.participa_cotacao !== false,
-      limite_orcamentos_mes: campanha.limite_orcamentos_mes || '',
+      // limite_orcamentos_mes removido do formulário (não usado por enquanto)
     });
   };
 
@@ -195,7 +218,10 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
       const response = await fetch(`/api/admin/campanhas/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify({
+          ...editData,
+          limite_orcamentos_mes: null, // Sempre ilimitado por enquanto
+        }),
       });
 
       if (!response.ok) {
@@ -251,7 +277,19 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
       }
 
       alert('✅ Campanha excluída com sucesso!');
-      router.refresh();
+      
+      // Remover a campanha da lista localmente para atualização imediata
+      const campanhasAtualizadas = campanhas.filter(c => c.id !== id);
+      setCampanhas(campanhasAtualizadas);
+      
+      // Se estiver editando a campanha deletada, cancelar edição
+      if (editingId === id) {
+        setEditingId(null);
+        setEditData({});
+      }
+      
+      // Recarregar a página para garantir que os dados estejam sincronizados com o servidor
+      window.location.reload();
     } catch (error) {
       console.error('Erro ao excluir:', error);
       alert('❌ Erro ao excluir campanha');
@@ -271,7 +309,10 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
       const response = await fetch('/api/admin/campanhas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCampanhaData),
+        body: JSON.stringify({
+          ...newCampanhaData,
+          limite_orcamentos_mes: null, // Sempre ilimitado por enquanto
+        }),
       });
 
       const data = await response.json();
@@ -290,7 +331,7 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
         data_fim: '',
         valor_total: 0,
         participa_cotacao: true,
-        limite_orcamentos_mes: null,
+        // limite_orcamentos_mes removido do formulário (não usado por enquanto)
       });
       router.refresh();
     } catch (error: any) {
@@ -313,6 +354,16 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  // Verificar se a data está vencida
+  const isDateExpired = (dateString: string | null | undefined): boolean => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Resetar horas para comparar apenas datas
+    date.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
   const getBadgeColor = (plano: string) => {
     const colors: Record<string, string> = {
       top: 'bg-purple-100 text-purple-800',
@@ -321,6 +372,17 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
       intermediario: 'bg-yellow-100 text-yellow-800',
     };
     return colors[plano.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Validar email
+  const isValidEmail = (email: string | undefined | null): boolean => {
+    if (!email || email.trim() === '') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  const hasEmailIssue = (campanha: Campanha): boolean => {
+    return !isValidEmail(campanha.email);
   };
 
   return (
@@ -498,7 +560,24 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                             <div className="text-sm font-medium text-gray-900 mb-2">
                               Editando: {campanha.empresa_nome}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Email da Empresa *
+                                </label>
+                                <input
+                                  type="email"
+                                  value={editData.email || ''}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, email: e.target.value })
+                                  }
+                                  placeholder="email@empresa.com.br"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Email do hotsite (será atualizado no hotsite)
+                                </p>
+                              </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">
                                   Tipo de Empresa
@@ -542,57 +621,22 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
                                 />
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Status
-                                </label>
-                                <select
-                                  value={editData.ativo ? 'ativa' : 'inativa'}
-                                  onChange={(e) =>
-                                    setEditData({ ...editData, ativo: e.target.value === 'ativa' })
-                                  }
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
-                                >
-                                  <option value="ativa">Ativa</option>
-                                  <option value="inativa">Inativa</option>
-                                </select>
-                              </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                              <div>
-                                <label className="flex items-center gap-2 text-sm text-gray-700">
-                                  <input
-                                    type="checkbox"
-                                    checked={editData.participa_cotacao !== false}
-                                    onChange={(e) =>
-                                      setEditData({ ...editData, participa_cotacao: e.target.checked })
-                                    }
-                                    className="w-4 h-4 text-[#0073e6] focus:ring-[#0073e6] border-gray-300 rounded"
-                                  />
-                                  <span className="font-medium">Participa de Cotação</span>
-                                </label>
-                                <p className="text-xs text-gray-500 ml-6 mt-1">
-                                  Se marcado, esta campanha receberá orçamentos automaticamente
-                                </p>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Limite de Orçamentos/Mês
-                                </label>
+                            <div className="mt-4">
+                              <label className="flex items-center gap-2 text-sm text-gray-700">
                                 <input
-                                  type="number"
-                                  min="0"
-                                  placeholder="Ilimitado"
-                                  value={editData.limite_orcamentos_mes}
+                                  type="checkbox"
+                                  checked={editData.participa_cotacao !== false}
                                   onChange={(e) =>
-                                    setEditData({ ...editData, limite_orcamentos_mes: e.target.value ? parseInt(e.target.value) : '' })
+                                    setEditData({ ...editData, participa_cotacao: e.target.checked })
                                   }
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                                  className="w-4 h-4 text-[#0073e6] focus:ring-[#0073e6] border-gray-300 rounded"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Deixe vazio para ilimitado
-                                </p>
-                              </div>
+                                <span className="font-medium">Participa de Cotação</span>
+                              </label>
+                              <p className="text-xs text-gray-500 ml-6 mt-1">
+                                Se marcado, esta campanha receberá orçamentos automaticamente
+                              </p>
                             </div>
                             <div className="flex gap-2">
                               <button
@@ -620,6 +664,23 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                           <div className="text-sm font-medium text-gray-900">
                             {campanha.empresa_nome}
                           </div>
+                          {campanha.email ? (
+                            <div className={`text-xs mt-1 flex items-center gap-1 ${
+                              isValidEmail(campanha.email) 
+                                ? 'text-gray-500' 
+                                : 'text-red-600 font-medium'
+                            }`}>
+                              {!isValidEmail(campanha.email) && (
+                                <span title="Email inválido">⚠️</span>
+                              )}
+                              {campanha.email}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
+                              <span title="Email não cadastrado">⚠️</span>
+                              Sem email cadastrado
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -645,8 +706,13 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                             {formatDate(campanha.data_inicio)}
                           </div>
                           {campanha.data_fim && (
-                            <div className="text-xs text-gray-500">
+                            <div className={`text-xs ${
+                              isDateExpired(campanha.data_fim) 
+                                ? 'text-red-600 font-semibold' 
+                                : 'text-gray-500'
+                            }`}>
                               até {formatDate(campanha.data_fim)}
+                              {isDateExpired(campanha.data_fim) && ' ⚠️'}
                             </div>
                           )}
                         </td>
@@ -736,6 +802,23 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Email da Empresa *
+                      </label>
+                      <input
+                        type="email"
+                        value={editData.email || ''}
+                        onChange={(e) =>
+                          setEditData({ ...editData, email: e.target.value })
+                        }
+                        placeholder="email@empresa.com.br"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Email do hotsite (será atualizado no hotsite)
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Tipo de Empresa
                       </label>
                       <select
@@ -778,21 +861,6 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        value={editData.ativo ? 'ativa' : 'inativa'}
-                        onChange={(e) =>
-                          setEditData({ ...editData, ativo: e.target.value === 'ativa' })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
-                      >
-                        <option value="ativa">Ativa</option>
-                        <option value="inativa">Inativa</option>
-                      </select>
-                    </div>
-                    <div>
                       <label className="flex items-center gap-2 text-sm text-gray-700">
                         <input
                           type="checkbox"
@@ -804,21 +872,9 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                         />
                         <span className="font-medium">Participa de Cotação</span>
                       </label>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Limite de Orçamentos/Mês
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="Ilimitado"
-                        value={editData.limite_orcamentos_mes}
-                        onChange={(e) =>
-                          setEditData({ ...editData, limite_orcamentos_mes: e.target.value ? parseInt(e.target.value) : '' })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
-                      />
+                      <p className="text-xs text-gray-500 ml-6 mt-1">
+                        Se marcado, esta campanha receberá orçamentos automaticamente
+                      </p>
                     </div>
                     <div className="flex gap-2 pt-2">
                       <button
@@ -845,6 +901,23 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                       <h3 className="text-base font-semibold text-gray-900">
                         {campanha.empresa_nome}
                       </h3>
+                      {campanha.email ? (
+                        <p className={`text-sm mt-1 flex items-center gap-1 ${
+                          isValidEmail(campanha.email) 
+                            ? 'text-gray-500' 
+                            : 'text-red-600 font-medium'
+                        }`}>
+                          {!isValidEmail(campanha.email) && (
+                            <span title="Email inválido">⚠️</span>
+                          )}
+                          {campanha.email}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-red-600 font-medium mt-1 flex items-center gap-1">
+                          <span title="Email não cadastrado">⚠️</span>
+                          Sem email cadastrado
+                        </p>
+                      )}
                       <p className="text-sm text-gray-600 mt-1">
                         {campanha.cidade_nome || 'Sem cidade'}
                       </p>
@@ -869,7 +942,12 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                       <span className="text-gray-600">Período:</span>
                       <span className="font-medium text-gray-900">
                         {formatDate(campanha.data_inicio)}
-                        {campanha.data_fim && ` - ${formatDate(campanha.data_fim)}`}
+                        {campanha.data_fim && (
+                          <span className={isDateExpired(campanha.data_fim) ? 'text-red-600 font-semibold' : ''}>
+                            {' - '}{formatDate(campanha.data_fim)}
+                            {isDateExpired(campanha.data_fim) && ' ⚠️'}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -1068,22 +1146,6 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Limite de Orçamentos/Mês
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Ilimitado"
-                      value={newCampanhaData.limite_orcamentos_mes || ''}
-                      onChange={(e) => setNewCampanhaData({ ...newCampanhaData, limite_orcamentos_mes: e.target.value ? parseInt(e.target.value) : null })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Deixe vazio para ilimitado. Controla quantos orçamentos esta campanha pode receber por mês.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1100,7 +1162,7 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
                     data_fim: '',
                     valor_total: 0,
                     participa_cotacao: true,
-                    limite_orcamentos_mes: null,
+                    // limite_orcamentos_mes removido do formulário (não usado por enquanto)
                   });
                 }}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"

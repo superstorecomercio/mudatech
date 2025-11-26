@@ -30,6 +30,7 @@ export async function PATCH(
     const updateData = {
       empresa_id: body.empresa_id || null,
       nome_exibicao: body.nome_exibicao,
+      email: body.email || null,
       descricao: body.descricao,
       endereco: body.endereco,
       // Se cidade_id foi fornecido, usar dados da tabela cidades
@@ -44,7 +45,7 @@ export async function PATCH(
       }),
       tipoempresa: body.tipoempresa || 'Empresa de Mudança',
       telefone1: body.telefone1 || null,
-      telefone2: body.telefone2 || null,
+      telefone2: null, // Removido - usar apenas telefone1 (WhatsApp)
       verificado: body.verificado !== undefined ? body.verificado : false,
       logo_url: body.logo_url || null,
       foto1_url: body.foto1_url || null,

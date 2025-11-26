@@ -1,143 +1,79 @@
-import { createAdminClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
 import CampanhasList from '@/app/components/admin/CampanhasList';
 
-// Desabilitar cache para sempre buscar dados atualizados
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export default function CampanhasPage() {
+  const [filteredCampanhas, setFilteredCampanhas] = useState<any[]>([]);
+  const [campanhasFormatadas, setCampanhasFormatadas] = useState<any[]>([]);
+  const [hotsitesDisponiveis, setHotsitesDisponiveis] = useState<any[]>([]);
+  const [planosDisponiveis, setPlanosDisponiveis] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function CampanhasPage() {
-  const supabase = createAdminClient();
+  useEffect(() => {
+    async function loadData() {
+      try {
+        console.log('🔄 Carregando campanhas...');
+        const response = await fetch('/api/admin/campanhas/list');
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+          throw new Error(errorData.error || 'Erro ao carregar campanhas');
+        }
+        
+        const data = await response.json();
+        console.log('✅ Dados carregados:', {
+          campanhas: data.campanhas?.length || 0,
+          hotsites: data.hotsites?.length || 0,
+          planos: data.planos?.length || 0,
+        });
 
-  // Buscar campanhas com hotsites relacionados (usando hotsite_id)
-  const { data: campanhas, error } = await supabase
-    .from('campanhas')
-    .select(`
-      id,
-      hotsite_id,
-      empresa_id,
-      data_inicio,
-      data_fim,
-      valor_mensal,
-      ativo,
-      participa_cotacao,
-      limite_orcamentos_mes,
-      hotsite:hotsites!hotsite_id(
-        id,
-        nome_exibicao,
-        telefone1,
-        tipoempresa,
-        cidade:cidades(nome, estado)
-      ),
-      empresas(
-        id,
-        nome,
-        hotsites(
-          id, 
-          nome_exibicao, 
-          tipoempresa,
-          cidade:cidades(nome, estado)
-        )
-      ),
-      planos(
-        id,
-        nome,
-        ordem
-      )
-    `)
-    .order('data_inicio', { ascending: false });
+        if (!data.campanhas) {
+          console.error('❌ Dados inválidos: campanhas não encontradas');
+          return;
+        }
 
-  if (error) {
-    console.error('❌ Erro ao buscar campanhas:', error);
+        setCampanhasFormatadas(data.campanhas || []);
+        setFilteredCampanhas(data.campanhas || []); // Inicialmente, todas as campanhas estão filtradas
+        setHotsitesDisponiveis(data.hotsites || []);
+        setPlanosDisponiveis(data.planos || []);
+      } catch (error: any) {
+        console.error('❌ Erro ao carregar dados:', error);
+        alert(`Erro ao carregar campanhas: ${error.message || 'Erro desconhecido'}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Calcular totais baseados nas campanhas filtradas
+  const total = filteredCampanhas.length;
+  const ativas = filteredCampanhas.filter((c) => c.ativo).length;
+  const inativas = filteredCampanhas.filter((c) => !c.ativo).length;
+
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p className="font-semibold">Erro ao carregar campanhas</p>
-          <p className="text-sm mt-1">{error.message}</p>
+        <div className="text-center">
+          <p className="text-gray-600">Carregando campanhas...</p>
         </div>
       </div>
     );
   }
 
-  // Formatar dados para o componente (priorizando hotsite_id)
-  const campanhasFormatadas = campanhas?.map((c: any) => {
-    // Status ativo vem diretamente do campo booleano
-    const ativo = c.ativo === true;
-
-    // Priorizar hotsite vinculado diretamente (via hotsite_id)
-    let hotsite = c.hotsite; // Vínculo direto via hotsite_id
-    
-    // Fallback: buscar via empresa_id (compatibilidade temporária)
-    if (!hotsite && c.empresas?.hotsites && c.empresas.hotsites.length > 0) {
-      hotsite = c.empresas.hotsites[0];
-    }
-
-    // Nome da empresa vem do hotsite
-    const empresaNome = hotsite?.nome_exibicao || c.empresas?.nome || 'Sem vínculo';
-    
-    // Cidade vem do hotsite (agora via JOIN com tabela cidades)
-    const cidadeNome = hotsite?.cidade?.nome && hotsite?.cidade?.estado
-      ? `${hotsite.cidade.nome} - ${hotsite.cidade.estado}`
-      : undefined;
-    
-    // Tipo de empresa vem do hotsite
-    const tipoEmpresa = hotsite?.tipoempresa || 'Empresa de Mudança';
-
-    return {
-      id: c.id,
-      hotsite_id: c.hotsite_id,
-      empresa_id: c.empresa_id,
-      empresa_nome: empresaNome,
-      plano_nome: c.planos?.nome || 'Sem plano',
-      plano_ordem: c.planos?.ordem || 999,
-      cidade_nome: cidadeNome,
-      tipoempresa: tipoEmpresa,
-      data_inicio: c.data_inicio,
-      data_fim: c.data_fim,
-      valor: c.valor_mensal || 0,
-      ativo,
-      participa_cotacao: c.participa_cotacao,
-      limite_orcamentos_mes: c.limite_orcamentos_mes,
-    };
-  }) || [];
-
-  console.log('✅ Campanhas carregadas:', campanhasFormatadas.length);
-
-  // Contar ativas e inativas
-  const ativas = campanhasFormatadas.filter((c) => c.ativo).length;
-  const inativas = campanhasFormatadas.filter((c) => !c.ativo).length;
-
-  // Buscar hotsites e planos para o formulário de nova campanha
-  // Buscar total de hotsites para paginação
-  const { count: totalHotsites } = await supabase
-    .from('hotsites')
-    .select('*', { count: 'exact', head: true });
-
-  // Buscar todos os hotsites em lotes (limite de 1000 por vez)
-  const pageSize = 1000;
-  const totalPages = Math.ceil((totalHotsites || 0) / pageSize);
-  let allHotsites: any[] = [];
-
-  for (let page = 0; page < totalPages; page++) {
-    const start = page * pageSize;
-    const end = start + pageSize - 1;
-    
-    const { data: hotsitesPage } = await supabase
-      .from('hotsites')
-      .select('id, nome_exibicao, cidade:cidades(nome, estado)')
-      .order('nome_exibicao', { ascending: true })
-      .range(start, end);
-    
-    if (hotsitesPage) {
-      allHotsites = [...allHotsites, ...hotsitesPage];
-    }
+  // Verificar se há erro (campanhas vazias após carregar)
+  if (!loading && campanhasFormatadas.length === 0 && filteredCampanhas.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+          <p className="font-semibold">Nenhuma campanha encontrada</p>
+          <p className="text-sm mt-1">Verifique se há campanhas cadastradas no sistema.</p>
+        </div>
+      </div>
+    );
   }
-
-  const hotsitesDisponiveis = allHotsites;
-
-  const { data: planosDisponiveis } = await supabase
-    .from('planos')
-    .select('id, nome, ordem')
-    .order('ordem', { ascending: true });
 
   return (
     <div>
@@ -157,7 +93,7 @@ export default async function CampanhasPage() {
             <div>
               <p className="text-gray-600 text-xs sm:text-sm mb-1">Total de Campanhas</p>
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {campanhasFormatadas.length}
+                {total}
               </p>
             </div>
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center text-xl sm:text-2xl flex-shrink-0">
@@ -196,8 +132,8 @@ export default async function CampanhasPage() {
         campanhas={campanhasFormatadas} 
         hotsites={hotsitesDisponiveis || []}
         planos={planosDisponiveis || []}
+        onFilteredCampanhasChange={setFilteredCampanhas}
       />
     </div>
   );
 }
-

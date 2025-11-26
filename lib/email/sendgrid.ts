@@ -20,8 +20,9 @@ export async function sendEmail(
   options: EmailOptions,
   config: ConfigOptions
 ): Promise<{ success: boolean; messageId?: string; error?: string; testMode?: boolean }> {
-  // Interceptar em modo de teste
-  if (isTestMode()) {
+  // Interceptar em modo de teste (usar versão assíncrona para garantir configuração correta)
+  const testMode = await isTestMode()
+  if (testMode) {
     return interceptTestEmail(options, 'sendgrid')
   }
 

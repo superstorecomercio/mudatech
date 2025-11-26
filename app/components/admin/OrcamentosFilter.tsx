@@ -1,67 +1,54 @@
 'use client'
 
-import { useState, useTransition, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
 import { Search, X } from 'lucide-react'
 
-export default function OrcamentosFilter() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
+interface OrcamentosFilterProps {
+  search: string
+  setSearch: (value: string) => void
+  searchType: 'nome' | 'codigo' | 'data'
+  setSearchType: (type: 'nome' | 'codigo' | 'data') => void
+  onSearch: () => void
+}
+
+export default function OrcamentosFilter({
+  search,
+  setSearch,
+  searchType,
+  setSearchType,
+  onSearch
+}: OrcamentosFilterProps) {
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
-  
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchType, setSearchType] = useState<'nome' | 'codigo' | 'data'>('nome')
 
-  useEffect(() => {
-    setSearchTerm(searchParams.get('search') || '')
-    setSearchType((searchParams.get('type') as 'nome' | 'codigo' | 'data') || 'nome')
-  }, [searchParams])
-
-  const updateSearch = (value: string, type: 'nome' | 'codigo' | 'data') => {
+  const handleSearch = (value: string, type: 'nome' | 'codigo' | 'data') => {
     // Limpar timer anterior
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
     }
 
     // Atualizar estado local imediatamente
-    setSearchTerm(value)
+    setSearch(value)
     setSearchType(type)
 
-    // Debounce: aguardar 500ms antes de atualizar a URL
+    // Debounce: aguardar 500ms antes de buscar
     debounceTimer.current = setTimeout(() => {
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        
-        if (value.trim()) {
-          params.set('search', value.trim())
-          params.set('type', type)
-        } else {
-          params.delete('search')
-          params.delete('type')
-        }
-        
-        router.push(`/admin/orcamentos?${params.toString()}`)
-      })
+      onSearch()
     }, 500)
   }
 
-  const handleSearch = (value: string, type: 'nome' | 'codigo' | 'data') => {
-    updateSearch(value, type)
-  }
-
   const handleTypeChange = (type: 'nome' | 'codigo' | 'data') => {
-    updateSearch(searchTerm, type)
+    setSearchType(type)
+    if (search.trim()) {
+      onSearch()
+    }
   }
 
   const clearSearch = () => {
-    setSearchTerm('')
+    setSearch('')
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
     }
-    startTransition(() => {
-      router.push('/admin/orcamentos')
-    })
+    onSearch()
   }
 
   // Converter data para formato YYYY-MM-DD para input type="date"
@@ -111,14 +98,14 @@ export default function OrcamentosFilter() {
             {searchType === 'data' ? (
               <input
                 type="date"
-                value={formatDateForInput(searchTerm)}
+                value={formatDateForInput(search)}
                 onChange={handleDateChange}
                 className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
               <input
                 type="text"
-                value={searchTerm}
+                value={search}
                 onChange={(e) => handleSearch(e.target.value, searchType)}
                 placeholder={
                   searchType === 'nome' 
@@ -128,7 +115,7 @@ export default function OrcamentosFilter() {
                 className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             )}
-            {searchTerm && (
+            {search && (
               <button
                 onClick={clearSearch}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -175,9 +162,9 @@ export default function OrcamentosFilter() {
           </button>
         </div>
       </div>
-      {searchTerm && (
+      {search && (
         <div className="mt-2 text-sm text-gray-600">
-          Buscando por {searchType === 'nome' ? 'nome' : searchType === 'codigo' ? 'código' : 'data'}: <span className="font-medium">{searchTerm}</span>
+          Buscando por {searchType === 'nome' ? 'nome' : searchType === 'codigo' ? 'código' : 'data'}: <span className="font-medium">{search}</span>
         </div>
       )}
     </div>

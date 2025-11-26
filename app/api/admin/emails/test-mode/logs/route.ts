@@ -15,11 +15,8 @@ export async function GET() {
       .order('enviado_em', { ascending: false })
       .limit(100)
     
-    console.log('📧 [API LOGS] Buscando logs de teste...')
-    console.log('📧 [API LOGS] Query direta retornou:', allTestLogs?.length || 0, 'logs')
-    
     if (allError) {
-      console.error('❌ Erro na query direta:', allError)
+      console.error('❌ [API LOGS] Erro na query direta:', allError)
     }
     
     // Também buscar por metadata (sem filtro de status_envio que não existe)
@@ -30,7 +27,9 @@ export async function GET() {
       .order('enviado_em', { ascending: false })
       .limit(100)
     
-    console.log('📧 [API LOGS] Query por metadata retornou:', metadataLogs?.length || 0, 'logs')
+    if (metadataError) {
+      console.error('❌ [API LOGS] Erro na query por metadata:', metadataError)
+    }
     
     // Combinar resultados (remover duplicatas)
     const combinedLogs = [...(allTestLogs || []), ...(metadataLogs || [])]
@@ -41,8 +40,6 @@ export async function GET() {
     // Usar função helper para converter
     const logs = await getTestEmailLogs()
     const stats = await getTestEmailStats()
-    
-    console.log('📧 [API LOGS] Função getTestEmailLogs retornou:', logs.length, 'logs')
     
     return NextResponse.json({
       logs: logs.length > 0 ? logs : uniqueLogs.map(item => ({
@@ -72,19 +69,46 @@ export async function GET() {
 
 export async function DELETE() {
   try {
+    const supabase = createAdminClient()
+    
     // Limpar cache em memória
     clearTestEmailLogs()
     
-    // Limpar logs de teste do banco (opcional - você pode querer manter histórico)
-    // const supabase = createAdminClient()
-    // await supabase
-    //   .from('email_tracking')
-    //   .delete()
-    //   .eq('status_envio', 'enviado')
-    //   .or('template_tipo.eq.teste_configuracao,metadata->modo_teste.eq.true')
+    // Deletar logs de teste do banco de dados
+    // Buscar IDs dos logs de teste primeiro
+    const { data: testLogs } = await supabase
+      .from('email_tracking')
+      .select('id')
+      .or('tipo_email.eq.teste_configuracao,and(tipo_email.neq.null,metadata->modo_teste.eq.true)')
     
-    return NextResponse.json({ success: true })
+    if (testLogs && testLogs.length > 0) {
+      const ids = testLogs.map(log => log.id)
+      
+      // Deletar em lotes (Supabase tem limite de 1000 por vez)
+      const batchSize = 1000
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize)
+        const { error: deleteError } = await supabase
+          .from('email_tracking')
+          .delete()
+          .in('id', batch)
+        
+        if (deleteError) {
+          console.error('Erro ao deletar lote de logs:', deleteError)
+          throw deleteError
+        }
+      }
+      
+      console.log(`✅ ${ids.length} logs de teste deletados do banco`)
+    }
+    
+    return NextResponse.json({ 
+      success: true,
+      deleted: testLogs?.length || 0,
+      message: `${testLogs?.length || 0} logs de teste foram deletados`
+    })
   } catch (error: any) {
+    console.error('Erro ao limpar logs:', error)
     return NextResponse.json(
       { error: error.message || 'Erro ao limpar logs' },
       { status: 500 }

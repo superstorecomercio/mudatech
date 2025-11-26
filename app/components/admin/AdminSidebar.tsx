@@ -35,9 +35,12 @@ export default function AdminSidebar() {
     { href: '/admin/planos', label: 'Planos', icon: '💎' },
     { href: '/admin/cidades', label: 'Cidades', icon: '🌍' },
     { href: '/admin/orcamentos', label: 'Orçamentos', icon: '📝' },
-    { href: '/admin/emails', label: 'Controle de Emails', icon: '📧' },
-    { href: '/admin/emails/configuracao', label: 'Config. Emails', icon: '⚙️' },
-    { href: '/admin/emails/templates', label: 'Templates de Email', icon: '📝' },
+    // Seção de Emails
+    { href: '/admin/emails', label: 'Fila de Emails', icon: '📧' },
+    { href: '/admin/emails/configuracao', label: 'API Email (SocketLabs)', icon: '⚙️' },
+    { href: '/admin/emails/rotas', label: 'Executar Rotas', icon: '🚀' },
+    { href: '/admin/emails/templates', label: 'Templates', icon: '📝' },
+    { href: '/admin/emails/logs', label: 'Logs de Envio', icon: '📋' },
     { href: '/admin/emails/tracking', label: 'Rastreamento', icon: '🔍' },
     { href: '/admin/emails/test-mode', label: 'Modo de Teste', icon: '🧪' },
   ];
@@ -45,8 +48,8 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#003366] text-white shadow-lg">
-        <div className="flex items-center justify-between p-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#003366] text-white shadow-lg h-16">
+        <div className="flex items-center justify-between p-4 h-full">
           <h1 className="text-xl font-bold">Admin Dashboard</h1>
           <button
             onClick={() => setIsOpen(!isOpen)}

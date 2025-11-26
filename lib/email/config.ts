@@ -15,7 +15,9 @@ export interface EmailConfig {
 
 export async function getEmailConfig(): Promise<EmailConfig | null> {
   try {
-    const supabase = createServerClient()
+    // Usar createAdminClient para garantir acesso à tabela configuracoes
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const supabase = createAdminClient()
 
     const { data, error } = await supabase
       .from('configuracoes')
@@ -23,7 +25,15 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
       .eq('chave', 'email_config')
       .single()
 
+    console.log('📧 [getEmailConfig] Busca no banco:', {
+      encontrou: !!data,
+      error: error?.message,
+      valor_tipo: typeof data?.valor,
+      valor_preview: data?.valor ? JSON.stringify(data.valor).substring(0, 200) : 'null'
+    })
+
     if (error || !data) {
+      console.log('📧 [getEmailConfig] Usando fallback de variáveis de ambiente')
       // Fallback para variáveis de ambiente
       return {
         provider: (process.env.EMAIL_PROVIDER as any) || null,
@@ -37,9 +47,42 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
       }
     }
 
-    return data.valor as EmailConfig
+    // Parsear o valor JSONB corretamente
+    const configValue = typeof data.valor === 'string' 
+      ? JSON.parse(data.valor) 
+      : data.valor
+
+    console.log('📧 [getEmailConfig] Config parseada:', {
+      provider: configValue.provider,
+      from_email: configValue.from_email,
+      from_name: configValue.from_name,
+      ativo: configValue.ativo
+    })
+
+    // Garantir que todos os campos estão presentes com valores padrão
+    const finalConfig = {
+      provider: configValue.provider || null,
+      api_key: configValue.api_key || '',
+      server_id: configValue.server_id || '',
+      from_email: configValue.from_email || '',
+      from_name: configValue.from_name || 'MudaTech',
+      reply_to: configValue.reply_to || '',
+      ativo: configValue.ativo || false,
+      testado: configValue.testado || false,
+      ultimo_teste: configValue.ultimo_teste || undefined,
+      erro_teste: configValue.erro_teste || undefined
+    }
+
+    console.log('📧 [getEmailConfig] Config final:', {
+      provider: finalConfig.provider,
+      from_email: finalConfig.from_email,
+      from_name: finalConfig.from_name,
+      ativo: finalConfig.ativo
+    })
+
+    return finalConfig
   } catch (error) {
-    console.error('Erro ao buscar configuração de email:', error)
+    console.error('❌ [getEmailConfig] Erro ao buscar configuração de email:', error)
     return null
   }
 }

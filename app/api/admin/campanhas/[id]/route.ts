@@ -49,20 +49,32 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Se tipoempresa foi enviado, atualizar o hotsite
-    if (body.tipoempresa !== undefined && body.hotsite_id) {
-      console.log('📝 [API Campanhas] Atualizando tipoempresa do hotsite:', body.hotsite_id);
+    // Se tipoempresa ou email foi enviado, atualizar o hotsite
+    if (body.hotsite_id) {
+      const hotsiteUpdateData: any = {};
       
-      const { error: hotsiteError } = await supabase
-        .from('hotsites')
-        .update({ tipoempresa: body.tipoempresa })
-        .eq('id', body.hotsite_id);
+      if (body.tipoempresa !== undefined) {
+        hotsiteUpdateData.tipoempresa = body.tipoempresa;
+      }
+      
+      if (body.email !== undefined) {
+        hotsiteUpdateData.email = body.email;
+      }
+      
+      if (Object.keys(hotsiteUpdateData).length > 0) {
+        console.log('📝 [API Campanhas] Atualizando hotsite:', body.hotsite_id, hotsiteUpdateData);
+        
+        const { error: hotsiteError } = await supabase
+          .from('hotsites')
+          .update(hotsiteUpdateData)
+          .eq('id', body.hotsite_id);
 
-      if (hotsiteError) {
-        console.error('❌ [API Campanhas] Erro ao atualizar hotsite:', hotsiteError);
-        // Não retorna erro fatal, apenas loga
-      } else {
-        console.log('✅ [API Campanhas] Tipoempresa do hotsite atualizado!');
+        if (hotsiteError) {
+          console.error('❌ [API Campanhas] Erro ao atualizar hotsite:', hotsiteError);
+          // Não retorna erro fatal, apenas loga
+        } else {
+          console.log('✅ [API Campanhas] Hotsite atualizado!', hotsiteUpdateData);
+        }
       }
     }
 

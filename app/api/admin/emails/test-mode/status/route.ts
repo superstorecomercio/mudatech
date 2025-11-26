@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
-import { isTestMode, setTestModeConfig } from '@/lib/email/test-mode'
+import { isTestMode, setTestModeConfig, loadTestModeConfig } from '@/lib/email/test-mode'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
+    // Forçar recarregamento da configuração do banco
+    await loadTestModeConfig()
+    
     // Buscar configuração do banco
     const supabase = createAdminClient()
     const { data: testModeData } = await supabase
@@ -12,8 +15,6 @@ export async function GET() {
       .eq('chave', 'email_test_mode')
       .single()
 
-    const enabled = testModeData?.valor?.enabled
-    
     // Buscar email de teste da configuração de email
     let testEmail: string | undefined
     try {
@@ -30,21 +31,35 @@ export async function GET() {
       // Ignorar erro, usar padrão
     }
 
-    // Se não tem configuração no banco, usar lógica padrão
-    const active = enabled !== undefined ? enabled : isTestMode()
+    // Se encontrou configuração no banco, usar ela (mesmo que seja false)
+    let active: boolean
+    let source: string
     
-    // Atualizar cache
+    if (testModeData && testModeData.valor && testModeData.valor.enabled !== undefined) {
+      // Configuração explícita no banco
+      active = testModeData.valor.enabled === true
+      source = 'database'
+      console.log('📧 [Test Mode Status] Usando configuração do banco:', active)
+    } else {
+      // Não há configuração no banco, usar lógica padrão (assíncrona)
+      active = await isTestMode()
+      source = 'environment'
+      console.log('📧 [Test Mode Status] Usando configuração de ambiente:', active)
+    }
+    
+    // Atualizar cache com o valor correto
     setTestModeConfig(active, testEmail)
     
     return NextResponse.json({
       active,
       testEmail: testEmail || null,
-      source: enabled !== undefined ? 'database' : 'environment'
+      source
     })
   } catch (error) {
-    // Em caso de erro, usar lógica padrão
+    // Em caso de erro, usar lógica padrão (assíncrona)
+    const active = await isTestMode()
     return NextResponse.json({
-      active: isTestMode(),
+      active,
       testEmail: null,
       source: 'environment'
     })

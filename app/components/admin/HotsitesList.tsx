@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Search, Loader2 } from 'lucide-react';
 
 interface Hotsite {
   id: string;
   nome_exibicao?: string;
+  email?: string;
   descricao?: string;
   endereco?: string;
   cidade?: string;
@@ -14,25 +16,43 @@ interface Hotsite {
   foto1_url?: string;
 }
 
-interface HotsitesListProps {
-  hotsites: Hotsite[];
-}
-
-export default function HotsitesList({ hotsites: initialHotsites }: HotsitesListProps) {
+export default function HotsitesList() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [hotsites, setHotsites] = useState<Hotsite[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const hotsitesFiltrados = useMemo(() => {
+  // Debounce para evitar muitas requisições
+  useEffect(() => {
     if (!searchTerm.trim()) {
-      return initialHotsites;
+      setHotsites([]);
+      setHasSearched(false);
+      return;
     }
 
-    const searchLower = searchTerm.toLowerCase();
+    setLoading(true);
+    setHasSearched(true);
 
-    return initialHotsites.filter((hotsite) => {
-      const nome = (hotsite.nome_exibicao || '').toLowerCase();
-      return nome.includes(searchLower);
-    });
-  }, [initialHotsites, searchTerm]);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/admin/hotsites/search?q=${encodeURIComponent(searchTerm)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao buscar hotsites');
+        }
+
+        setHotsites(data.hotsites || []);
+      } catch (error) {
+        console.error('Erro ao buscar hotsites:', error);
+        setHotsites([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // Aguardar 300ms após parar de digitar
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   return (
     <div>
@@ -42,23 +62,44 @@ export default function HotsitesList({ hotsites: initialHotsites }: HotsitesList
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Buscar por nome
           </label>
-          <input
-            type="text"
-            placeholder="Digite o nome do hotsite..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-            autoComplete="off"
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Digite o nome do hotsite para buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              autoComplete="off"
+            />
+            {loading && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 animate-spin" />
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-1">
-            A busca ignora maiúsculas e minúsculas
+            Digite pelo menos 1 caractere para buscar. A busca ignora maiúsculas e minúsculas.
           </p>
         </div>
 
-        <div className="text-sm text-gray-600">
-          Mostrando <span className="font-semibold">{hotsitesFiltrados.length}</span> de{' '}
-          <span className="font-semibold">{initialHotsites.length}</span> hotsites
-        </div>
+        {hasSearched && (
+          <div className="text-sm text-gray-600">
+            {loading ? (
+              <span>Buscando...</span>
+            ) : (
+              <>
+                Mostrando <span className="font-semibold">{hotsites.length}</span> hotsite(s) encontrado(s)
+              </>
+            )}
+          </div>
+        )}
+
+        {!hasSearched && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              💡 <strong>Dica:</strong> Digite o nome do hotsite no campo acima para buscar e visualizar os resultados.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Tabela - Desktop */}
@@ -82,17 +123,37 @@ export default function HotsitesList({ hotsites: initialHotsites }: HotsitesList
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {hotsitesFiltrados.length > 0 ? (
-                hotsitesFiltrados.map((hotsite) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Buscando hotsites...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : !hasSearched ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center">
+                    <div className="text-gray-500">
+                      <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p className="font-medium">Digite no campo de busca para encontrar hotsites</p>
+                      <p className="text-sm mt-1">
+                        A busca será realizada automaticamente enquanto você digita
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : hotsites.length > 0 ? (
+                hotsites.map((hotsite) => (
                   <tr key={hotsite.id} className="hover:bg-gray-50">
                     <td className="px-4 lg:px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {hotsite.nome_exibicao || 'Sem nome'}
                       </div>
-                      {hotsite.descricao && (
-                        <div className="text-sm text-gray-500 line-clamp-2 mt-1">
-                          {hotsite.descricao.substring(0, 100)}
-                          {hotsite.descricao.length > 100 && '...'}
+                      {hotsite.email && (
+                        <div className="text-sm text-gray-500 mt-1">
+                          {hotsite.email}
                         </div>
                       )}
                     </td>
@@ -158,17 +219,34 @@ export default function HotsitesList({ hotsites: initialHotsites }: HotsitesList
 
       {/* Cards - Mobile */}
       <div className="md:hidden space-y-4">
-        {hotsitesFiltrados.length > 0 ? (
-          hotsitesFiltrados.map((hotsite) => (
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="flex items-center justify-center gap-2 text-gray-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Buscando hotsites...</span>
+            </div>
+          </div>
+        ) : !hasSearched ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="text-gray-500">
+              <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="font-medium">Digite no campo de busca para encontrar hotsites</p>
+              <p className="text-sm mt-1">
+                A busca será realizada automaticamente enquanto você digita
+              </p>
+            </div>
+          </div>
+        ) : hotsites.length > 0 ? (
+          hotsites.map((hotsite) => (
             <div key={hotsite.id} className="bg-white rounded-lg shadow-md p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3 className="text-base font-semibold text-gray-900">
                     {hotsite.nome_exibicao || 'Sem nome'}
                   </h3>
-                  {hotsite.descricao && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                      {hotsite.descricao}
+                  {hotsite.email && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {hotsite.email}
                     </p>
                   )}
                 </div>

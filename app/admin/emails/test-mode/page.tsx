@@ -76,14 +76,21 @@ export default function TestModePage() {
   }
 
   const handleClearLogs = async () => {
-    if (confirm('Tem certeza que deseja limpar todos os logs de teste?')) {
+    if (confirm('Tem certeza que deseja limpar todos os logs de teste? Esta ação não pode ser desfeita.')) {
       try {
-        await fetch('/api/admin/emails/test-mode/logs', { method: 'DELETE' })
+        const response = await fetch('/api/admin/emails/test-mode/logs', { method: 'DELETE' })
+        const data = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao limpar logs')
+        }
+        
+        alert(data.message || `✅ ${data.deleted || 0} logs de teste foram deletados`)
         loadLogs()
         setSelectedLog(null)
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao limpar logs:', error)
-        alert('Erro ao limpar logs')
+        alert(`Erro ao limpar logs: ${error.message}`)
       }
     }
   }

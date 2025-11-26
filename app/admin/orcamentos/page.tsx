@@ -1,11 +1,11 @@
-import { createServerClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { CheckCircle2, Clock, AlertTriangle, XCircle, Eye } from 'lucide-react'
-import OrcamentosFilter from '@/app/components/admin/OrcamentosFilter'
-import { Suspense } from 'react'
-import { formatDateOnlyBR, formatTimeOnlyBR, formatDateTimeBR } from '@/lib/utils/date'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import { useState, useEffect } from 'react'
+import { getSupabase } from '@/lib/supabaseClient'
+import Link from 'next/link'
+import { CheckCircle2, Clock, AlertTriangle, XCircle, Eye, Calendar } from 'lucide-react'
+import OrcamentosFilter from '@/app/components/admin/OrcamentosFilter'
+import { formatDateOnlyBR, formatTimeOnlyBR, formatDateTimeBR } from '@/lib/utils/date'
 
 interface Orcamento {
   id: string
@@ -73,105 +73,205 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 }
 
-export default async function OrcamentosPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ search?: string; type?: string }>
-}) {
-  const resolvedSearchParams = await searchParams
-  const supabase = createServerClient()
+type PeriodFilter = '5dias' | '15dias' | 'personalizado'
 
-  // Construir query base
-  let query = supabase
-    .from('orcamentos')
-    .select('*')
+export default function OrcamentosPage() {
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [searchType, setSearchType] = useState<'nome' | 'codigo' | 'data'>('nome')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('5dias')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
 
-  // Aplicar filtros se houver
-  const search = resolvedSearchParams?.search?.trim()
-  const searchType = resolvedSearchParams?.type || 'nome'
+  // Calcular datas baseadas no filtro de período
+  const getDateRange = () => {
+    const now = new Date()
+    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    
+    if (periodFilter === '5dias') {
+      const startDate = new Date(now)
+      startDate.setDate(startDate.getDate() - 5)
+      startDate.setHours(0, 0, 0, 0)
+      return { start: startDate.toISOString(), end: endDate.toISOString() }
+    } else if (periodFilter === '15dias') {
+      const startDate = new Date(now)
+      startDate.setDate(startDate.getDate() - 15)
+      startDate.setHours(0, 0, 0, 0)
+      return { start: startDate.toISOString(), end: endDate.toISOString() }
+    } else if (periodFilter === 'personalizado' && customStartDate && customEndDate) {
+      const start = new Date(customStartDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(customEndDate)
+      end.setHours(23, 59, 59, 999)
+      return { start: start.toISOString(), end: end.toISOString() }
+    }
+    return null
+  }
 
-  try {
-    if (search) {
-      if (searchType === 'nome') {
-        query = query.ilike('nome_cliente', `%${search}%`)
-      } else if (searchType === 'codigo') {
-        query = query.ilike('codigo_orcamento', `%${search}%`)
-      } else if (searchType === 'data') {
-        // Tentar parsear a data em diferentes formatos
-        let year: number | undefined, month: number | undefined, day: number | undefined
-        
-        // Formato DD/MM/AAAA ou DD-MM-AAAA
-        const dateMatch = search.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/)
-        if (dateMatch) {
-          [, day, month, year] = dateMatch.map(Number)
-        } else {
-          // Tentar formato AAAA-MM-DD
-          const isoMatch = search.match(/(\d{4})-(\d{2})-(\d{2})/)
-          if (isoMatch) {
-            [, year, month, day] = isoMatch.map(Number)
-          } else {
-            console.warn('Data inválida para busca:', search)
-            // Não aplicar filtro se não conseguir parsear
-          }
-        }
+  const fetchOrcamentos = async () => {
+    try {
+      setLoading(true)
+      const supabase = getSupabase()
+      
+      let query = supabase
+        .from('orcamentos')
+        .select('*')
 
-        if (year !== undefined && month !== undefined && day !== undefined) {
-          // Criar datas no timezone local e converter para UTC corretamente
-          // Isso garante que 24/11 no Brasil seja buscado corretamente
-          const startDate = new Date(year, month - 1, day, 0, 0, 0, 0)
-          const endDate = new Date(year, month - 1, day, 23, 59, 59, 999)
+      // Aplicar filtro de período
+      const dateRange = getDateRange()
+      if (dateRange) {
+        query = query
+          .gte('created_at', dateRange.start)
+          .lte('created_at', dateRange.end)
+      }
+
+      // Aplicar filtros de busca
+      if (search.trim()) {
+        if (searchType === 'nome') {
+          query = query.ilike('nome_cliente', `%${search.trim()}%`)
+        } else if (searchType === 'codigo') {
+          query = query.ilike('codigo_orcamento', `%${search.trim()}%`)
+        } else if (searchType === 'data') {
+          // Tentar parsear a data em diferentes formatos
+          let year: number | undefined, month: number | undefined, day: number | undefined
           
-          // Verificar se as datas são válidas
-          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-            console.warn('Data inválida para busca:', search)
+          const dateMatch = search.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/)
+          if (dateMatch) {
+            [, day, month, year] = dateMatch.map(Number)
           } else {
-            // Converter para ISO string (UTC)
-            // O toISOString() já faz a conversão correta considerando o timezone local
-            const startISO = startDate.toISOString()
-            const endISO = endDate.toISOString()
+            const isoMatch = search.match(/(\d{4})-(\d{2})-(\d{2})/)
+            if (isoMatch) {
+              [, year, month, day] = isoMatch.map(Number)
+            }
+          }
+
+          if (year !== undefined && month !== undefined && day !== undefined) {
+            const startDate = new Date(year, month - 1, day, 0, 0, 0, 0)
+            const endDate = new Date(year, month - 1, day, 23, 59, 59, 999)
             
-            // Filtrar por created_at (data que o orçamento foi criado/enviado)
-            query = query
-              .gte('created_at', startISO)
-              .lte('created_at', endISO)
+            if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+              query = query
+                .gte('created_at', startDate.toISOString())
+                .lte('created_at', endDate.toISOString())
+            }
           }
         }
       }
-    }
 
-    // Buscar orçamentos
-    const { data: orcamentos, error } = await query
-      .order('created_at', { ascending: false })
-      .limit(100)
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
 
-    // Se não houver dados, retornar array vazio
-    const orcamentosData = orcamentos || []
+      if (error) throw error
 
-    if (error) {
+      setOrcamentos(data || [])
+      setCurrentPage(1) // Resetar página ao buscar
+    } catch (error) {
       console.error('Erro ao buscar orçamentos:', error)
-      // Continuar mesmo com erro, retornando array vazio
+      setOrcamentos([])
+    } finally {
+      setLoading(false)
     }
+  }
 
-    // Estatísticas
-    const total = orcamentosData.length
-    const naFila = orcamentosData.filter((o: Orcamento) => o.status_envio_email === 'na_fila').length
-    const enviados = orcamentosData.filter((o: Orcamento) => o.status_envio_email === 'enviado').length
-    const comErro = orcamentosData.filter((o: Orcamento) => o.status_envio_email === 'erro').length
+  useEffect(() => {
+    fetchOrcamentos()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodFilter, customStartDate, customEndDate])
 
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
+  // Paginação
+  const totalPages = Math.ceil(orcamentos.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedOrcamentos = orcamentos.slice(startIndex, endIndex)
+
+  // Estatísticas baseadas em todos os orçamentos (não apenas os paginados)
+  const total = orcamentos.length
+  const naFila = orcamentos.filter((o: Orcamento) => o.status_envio_email === 'na_fila').length
+  const enviados = orcamentos.filter((o: Orcamento) => o.status_envio_email === 'enviado').length
+  const comErro = orcamentos.filter((o: Orcamento) => o.status_envio_email === 'erro').length
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div>
         <div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orçamentos</h1>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie todos os orçamentos recebidos</p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orçamentos</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie todos os orçamentos recebidos</p>
         </div>
+      </div>
 
-        {/* Filtro de Pesquisa */}
-        <Suspense fallback={<div className="bg-white rounded-lg border border-gray-200 p-4">Carregando filtro...</div>}>
-          <OrcamentosFilter />
-        </Suspense>
+      {/* Filtro de Período */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-500" />
+            <label className="text-sm font-medium text-gray-700">Período:</label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setPeriodFilter('5dias')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                periodFilter === '5dias'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Últimos 5 dias
+            </button>
+            <button
+              onClick={() => setPeriodFilter('15dias')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                periodFilter === '15dias'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Últimos 15 dias
+            </button>
+            <button
+              onClick={() => setPeriodFilter('personalizado')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                periodFilter === 'personalizado'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Intervalo Personalizado
+            </button>
+          </div>
+          {periodFilter === 'personalizado' && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Data inicial"
+              />
+              <span className="text-gray-500">até</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Data final"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filtro de Pesquisa */}
+      <OrcamentosFilter 
+        search={search}
+        setSearch={setSearch}
+        searchType={searchType}
+        setSearchType={setSearchType}
+        onSearch={fetchOrcamentos}
+      />
 
         {/* Estatísticas */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -260,8 +360,15 @@ export default async function OrcamentosPage({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orcamentosData && orcamentosData.length > 0 ? (
-                  orcamentosData.map((orcamento: Orcamento) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                      <Clock className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
+                      Carregando...
+                    </td>
+                  </tr>
+                ) : paginatedOrcamentos && paginatedOrcamentos.length > 0 ? (
+                  paginatedOrcamentos.map((orcamento: Orcamento) => (
                   <tr key={orcamento.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -352,12 +459,44 @@ export default async function OrcamentosPage({
             </tbody>
           </table>
         </div>
+        {/* Paginação Desktop */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, orcamentos.length)} de {orcamentos.length} orçamentos
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cards - Mobile */}
       <div className="lg:hidden space-y-4">
-        {orcamentosData && orcamentosData.length > 0 ? (
-          orcamentosData.map((orcamento: Orcamento) => (
+        {loading ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <Clock className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Carregando...</p>
+          </div>
+        ) : paginatedOrcamentos && paginatedOrcamentos.length > 0 ? (
+          paginatedOrcamentos.map((orcamento: Orcamento) => (
             <div key={orcamento.id} className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
@@ -444,6 +583,30 @@ export default async function OrcamentosPage({
             <p className="text-gray-500">Nenhum orçamento encontrado</p>
           </div>
         )}
+        {/* Paginação Mobile */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3">
+            <div className="text-sm text-gray-600 text-center">
+              Página {currentPage} de {totalPages} ({orcamentos.length} orçamentos)
+            </div>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Info sobre envio automático */}
@@ -462,21 +625,6 @@ export default async function OrcamentosPage({
         </div>
       </div>
     </div>
-    )
-  } catch (error) {
-    console.error('Erro ao carregar orçamentos:', error)
-    // Retornar página com erro
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orçamentos</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie todos os orçamentos recebidos</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Erro ao carregar orçamentos. Por favor, tente novamente.</p>
-        </div>
-      </div>
-    )
-  }
+  )
 }
 

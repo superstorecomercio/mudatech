@@ -25,8 +25,9 @@ export async function sendEmail(
   options: EmailOptions,
   config: ConfigOptions
 ): Promise<{ success: boolean; messageId?: string; error?: string; testMode?: boolean }> {
-  // Interceptar em modo de teste
-  if (isTestMode()) {
+  // Interceptar em modo de teste (usar versão assíncrona para garantir configuração correta)
+  const testMode = await isTestMode()
+  if (testMode) {
     return interceptTestEmail(options, 'nodemailer')
   }
 
@@ -40,7 +41,16 @@ export async function sendEmail(
         throw new Error('Nodemailer não encontrado no módulo')
       }
     } catch (importError: any) {
-      if (importError.code === 'MODULE_NOT_FOUND' || importError.message?.includes('Cannot find module')) {
+      // Tratar erros de módulo não encontrado
+      const errorMessage = importError?.message || ''
+      const errorCode = importError?.code || ''
+      
+      if (
+        errorCode === 'MODULE_NOT_FOUND' || 
+        errorMessage.includes('Cannot find module') ||
+        errorMessage.includes('Failed to resolve module') ||
+        errorMessage.includes('nodemailer')
+      ) {
         return {
           success: false,
           error: 'Pacote "nodemailer" não instalado. Execute: npm install nodemailer'

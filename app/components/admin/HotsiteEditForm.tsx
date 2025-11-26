@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Save, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import ImageUpload from './ImageUpload';
 import ArrayInput from './ArrayInput';
 
@@ -16,16 +18,31 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Formatação de telefone brasileiro
+  const formatPhone = (phone: string): string => {
+    const numbers = phone.replace(/\D/g, '');
+    if (numbers.length === 0) return '';
+    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  // Validar telefone brasileiro (10 ou 11 dígitos)
+  const validatePhone = (phone: string): boolean => {
+    const numbers = phone.replace(/\D/g, '');
+    return numbers.length === 10 || numbers.length === 11;
+  };
+
   // Form state
   const [hotsiteData, setHotsiteData] = useState({
     nome_exibicao: hotsite.nome_exibicao || '',
+    email: hotsite.email || '',
     descricao: hotsite.descricao || '',
     endereco: hotsite.endereco || '',
     cidade: hotsite.cidade || '',
     estado: hotsite.estado || '',
     tipoempresa: hotsite.tipoempresa || 'Empresa de Mudança',
     telefone1: hotsite.telefone1 || '',
-    telefone2: hotsite.telefone2 || '',
     verificado: hotsite.verificado || false,
     logo_url: hotsite.logo_url || '',
     foto1_url: hotsite.foto1_url || '',
@@ -37,10 +54,37 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
     highlights: hotsite.highlights || [],
   });
 
+  // Inicializar telefone formatado (pode vir com ou sem formatação do banco)
+  const initialPhone = hotsite.telefone1 || '';
+  const initialPhoneNumbers = initialPhone.replace(/\D/g, '');
+  const [phoneFormatted, setPhoneFormatted] = useState(formatPhone(initialPhoneNumbers));
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    const numbers = inputValue.replace(/\D/g, '');
+    
+    // Limitar a 11 dígitos
+    if (numbers.length <= 11) {
+      const formatted = formatPhone(numbers);
+      setPhoneFormatted(formatted);
+      setHotsiteData({ ...hotsiteData, telefone1: numbers });
+      setPhoneError(null);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setPhoneError(null);
+
+    // Validar telefone
+    if (hotsiteData.telefone1 && !validatePhone(hotsiteData.telefone1)) {
+      setPhoneError('Telefone inválido. Use o formato (11) 98765-4321 ou (11) 3456-7890');
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('📤 Enviando atualização do hotsite:', hotsiteData);
@@ -79,24 +123,72 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-6">Informações do Hotsite</h2>
-      
+    <div className="space-y-6">
+      {/* Header com título e botão de salvar */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <Link
+                href="/admin/hotsites"
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Editar Hotsite
+              </h1>
+            </div>
+            <div className="ml-8">
+              <p className="text-lg font-medium text-gray-900">
+                {hotsite.nome_exibicao || 'Sem nome'}
+              </p>
+              {hotsite.cidade && hotsite.estado && (
+                <p className="text-sm text-gray-600">
+                  {hotsite.cidade} - {hotsite.estado}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Link
+              href="/admin/hotsites"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Link>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="px-6 py-2 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors disabled:opacity-50 flex items-center gap-2 font-medium"
+            >
+              <Save className="w-4 h-4" />
+              {loading ? 'Salvando...' : 'Salvar Hotsite'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Mensagens de Erro/Sucesso */}
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <p className="font-semibold">Erro ao salvar</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
       )}
       
       {success && (
-        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           <p className="font-semibold">✅ Hotsite salvo com sucesso!</p>
         </div>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+      {/* Formulário Principal */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Informações Básicas</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Nome de Exibição
@@ -107,6 +199,22 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
             onChange={(e) => setHotsiteData({ ...hotsiteData, nome_exibicao: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email *
+          </label>
+          <input
+            type="email"
+            value={hotsiteData.email}
+            onChange={(e) => setHotsiteData({ ...hotsiteData, email: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+            placeholder="email@empresa.com.br"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Email para receber orçamentos e notificações
+          </p>
         </div>
 
         <div>
@@ -172,84 +280,81 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
           </p>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Endereço
-          </label>
-          <input
-            type="text"
-            value={hotsiteData.endereco}
-            onChange={(e) => setHotsiteData({ ...hotsiteData, endereco: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-          />
-        </div>
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Endereço
+            </label>
+            <input
+              type="text"
+              value={hotsiteData.endereco}
+              onChange={(e) => setHotsiteData({ ...hotsiteData, endereco: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Telefone 1
-          </label>
-          <input
-            type="tel"
-            value={hotsiteData.telefone1}
-            onChange={(e) => setHotsiteData({ ...hotsiteData, telefone1: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-            placeholder="(11) 98765-4321"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              WhatsApp *
+            </label>
+            <input
+              type="tel"
+              value={phoneFormatted}
+              onChange={handlePhoneChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] ${
+                phoneError ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-300'
+              }`}
+              placeholder="(11) 98765-4321"
+              maxLength={15}
+            />
+            {phoneError && (
+              <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Telefone/WhatsApp da empresa (10 ou 11 dígitos)
+            </p>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Telefone 2
-          </label>
-          <input
-            type="tel"
-            value={hotsiteData.telefone2}
-            onChange={(e) => setHotsiteData({ ...hotsiteData, telefone2: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-            placeholder="(11) 3456-7890"
-          />
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Descrição
+            </label>
+            <textarea
+              value={hotsiteData.descricao}
+              onChange={(e) => setHotsiteData({ ...hotsiteData, descricao: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+            />
+          </div>
         </div>
+      </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Descrição
-          </label>
-          <textarea
-            value={hotsiteData.descricao}
-            onChange={(e) => setHotsiteData({ ...hotsiteData, descricao: e.target.value })}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
-          />
-        </div>
+      {/* Seção de Imagens */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Imagens</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <div className="md:col-span-2">
           <ImageUpload
             label="Logo"
             currentUrl={hotsiteData.logo_url}
             onUploadComplete={(url) => setHotsiteData({ ...hotsiteData, logo_url: url })}
             folder={`hotsites/${hotsite.id}`}
           />
-        </div>
 
-        <div className="md:col-span-2">
           <ImageUpload
             label="Foto 1"
             currentUrl={hotsiteData.foto1_url}
             onUploadComplete={(url) => setHotsiteData({ ...hotsiteData, foto1_url: url })}
             folder={`hotsites/${hotsite.id}`}
           />
-        </div>
 
-        <div className="md:col-span-2">
           <ImageUpload
             label="Foto 2"
             currentUrl={hotsiteData.foto2_url}
             onUploadComplete={(url) => setHotsiteData({ ...hotsiteData, foto2_url: url })}
             folder={`hotsites/${hotsite.id}`}
           />
-        </div>
 
-        <div className="md:col-span-2">
           <ImageUpload
             label="Foto 3"
             currentUrl={hotsiteData.foto3_url}
@@ -260,10 +365,10 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
       </div>
 
       {/* Arrays dinâmicos usando componente reutilizável */}
-      <div className="space-y-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Detalhes do Hotsite</h3>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Detalhes do Hotsite</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ArrayInput
             label="Serviços"
             values={hotsiteData.servicos}
@@ -298,12 +403,14 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end">
+      {/* Botão de salvar no rodapé (para mobile) */}
+      <div className="lg:hidden bg-white rounded-lg shadow-md p-6 sticky bottom-0 z-10 border-t border-gray-200">
         <button
           onClick={handleSave}
           disabled={loading}
-          className="px-6 py-2 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors disabled:opacity-50"
+          className="w-full px-6 py-3 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
+          <Save className="w-5 h-5" />
           {loading ? 'Salvando...' : 'Salvar Hotsite'}
         </button>
       </div>

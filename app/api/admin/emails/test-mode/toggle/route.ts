@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { setTestModeConfig } from '@/lib/email/test-mode'
+import { setTestModeConfig, resetTestModeConfig } from '@/lib/email/test-mode'
 
 export async function GET() {
   try {
@@ -103,8 +103,11 @@ export async function POST(request: NextRequest) {
       // Ignorar erro, usar padrão
     }
 
-    // Atualizar cache com email de teste
+    // Invalidar cache e atualizar com nova configuração
+    resetTestModeConfig()
     setTestModeConfig(enabled, testEmail)
+
+    console.log('✅ [Test Mode Toggle] Configuração salva:', { enabled, testEmail })
 
     return NextResponse.json({
       success: true,

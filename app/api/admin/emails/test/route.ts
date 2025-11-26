@@ -14,15 +14,51 @@ export async function POST(request: NextRequest) {
     }
 
     // Validação específica para SocketLabs
-    if (provider === 'socketlabs' && !server_id) {
-      return NextResponse.json(
-        { error: 'Server ID é obrigatório para SocketLabs' },
-        { status: 400 }
-      )
+    if (provider === 'socketlabs') {
+      if (!server_id) {
+        return NextResponse.json(
+          { error: 'Server ID é obrigatório para SocketLabs' },
+          { status: 400 }
+        )
+      }
+      
+      // Validar formato do Server ID (deve ser numérico)
+      const serverIdNum = parseInt(server_id, 10)
+      if (isNaN(serverIdNum)) {
+        return NextResponse.json(
+          { error: `Server ID deve ser um número válido. Recebido: ${server_id}` },
+          { status: 400 }
+        )
+      }
+      
+      // Validar formato da API Key (deve ter pelo menos 20 caracteres)
+      if (!api_key || api_key.length < 20) {
+        return NextResponse.json(
+          { error: 'API Key inválida. A chave do SocketLabs deve ter pelo menos 20 caracteres' },
+          { status: 400 }
+        )
+      }
+      
+      // Validar formato do email do remetente
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(from_email)) {
+        return NextResponse.json(
+          { error: `Email do remetente inválido: ${from_email}` },
+          { status: 400 }
+        )
+      }
     }
 
-    // Verificar se está em modo de teste
-    const testModeActive = isTestMode()
+    // Verificar se está em modo de teste (usar versão assíncrona para garantir configuração correta)
+    // Forçar recarregamento da configuração para garantir que está atualizada
+    const { loadTestModeConfig } = await import('@/lib/email/test-mode')
+    await loadTestModeConfig()
+    const testModeActive = await isTestMode()
+    console.log('📧 [Test API] Modo de teste ativo?', testModeActive)
+    
+    if (testModeActive) {
+      console.warn('⚠️ [Test API] ATENÇÃO: Modo de teste está ATIVO. O email será interceptado e NÃO será enviado realmente!')
+    }
     
     // Determinar email de destino
     let testEmailTo: string
@@ -34,31 +70,55 @@ export async function POST(request: NextRequest) {
       testEmailTo = process.env.ADMIN_EMAIL || test_email || from_email
     }
 
-    // Importar o serviço de email apropriado
+    // Importar o serviço de email apropriado usando helper dinâmico
     let emailService
     try {
-      if (provider === 'socketlabs') {
-        emailService = await import('@/lib/email/socketlabs')
-      } else if (provider === 'resend') {
-        emailService = await import('@/lib/email/resend')
-      } else if (provider === 'sendgrid') {
-        emailService = await import('@/lib/email/sendgrid')
-      } else if (provider === 'nodemailer') {
-        emailService = await import('@/lib/email/nodemailer')
-      } else {
+      // Validar provedor
+      if (!['socketlabs', 'resend', 'sendgrid', 'nodemailer'].includes(provider)) {
         return NextResponse.json(
           { error: 'Provedor não suportado' },
           { status: 400 }
         )
       }
-    } catch (importError) {
-      // Se o módulo não existe, retornar erro informativo
+      
+      // Usar helper que constrói o caminho dinamicamente para evitar análise estática
+      const { importEmailService } = await import('@/lib/email/dynamic-import')
+      emailService = await importEmailService(provider as any)
+    } catch (importError: any) {
+      // Tratar erros específicos de módulo não encontrado
+      const errorMessage = importError?.message || ''
+      const errorCode = importError?.code || ''
+      
+      if (
+        errorCode === 'MODULE_NOT_FOUND' || 
+        errorMessage.includes('Cannot find module') ||
+        errorMessage.includes('Failed to resolve module')
+      ) {
+        const packageMap: Record<string, string> = {
+          resend: 'resend',
+          sendgrid: '@sendgrid/mail',
+          nodemailer: 'nodemailer',
+          socketlabs: '@socketlabs/email'
+        }
+        
+        const packageName = packageMap[provider] || provider
+        
+        return NextResponse.json(
+          { 
+            error: `Pacote "${packageName}" não instalado. Execute: npm install ${packageName}`,
+            hint: 'Instale o pacote necessário para usar este provedor'
+          },
+          { status: 400 }
+        )
+      }
+      
+      // Outros erros
       return NextResponse.json(
         { 
-          error: `Serviço de email não implementado. Veja a documentação em /docs/INTEGRACAO_EMAIL.md`,
-          hint: 'Você precisa implementar o serviço de email primeiro'
+          error: `Erro ao importar serviço de email: ${importError.message || 'Erro desconhecido'}`,
+          hint: 'Verifique se o provedor está correto e se os pacotes necessários estão instalados'
         },
-        { status: 501 }
+        { status: 500 }
       )
     }
 
@@ -77,6 +137,10 @@ export async function POST(request: NextRequest) {
         </p>
       </div>
     ` : ''
+    
+    // NÃO criar log aqui - o sendEmail() ou interceptTestEmail() já criam o log
+    // Isso evita duplicação de logs
+    const supabase = createAdminClient()
     
     const result = await emailService.sendEmail({
       to: testEmailTo,
@@ -101,6 +165,9 @@ export async function POST(request: NextRequest) {
       fromName: from_name
     }, config)
 
+    // O log já foi criado pelo sendEmail() ou interceptTestEmail()
+    // Não precisamos atualizar aqui, pois eles já salvam tudo necessário
+
     // Mensagem de resposta baseada no modo de teste
     let message: string
     if (testModeActive) {
@@ -119,10 +186,47 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Erro ao testar email:', error)
+    
+    // Salvar log de erro
+    try {
+      const supabase = createAdminClient()
+      const codigoRastreamento = `ERROR-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      
+      await supabase.from('email_tracking').insert({
+        codigo_rastreamento: codigoRastreamento,
+        tipo_email: 'teste_configuracao',
+        email_destinatario: testEmailTo || 'N/A',
+        assunto: 'Teste de Configuração - MudaTech (ERRO)',
+        enviado_em: new Date().toISOString(),
+        metadata: {
+          provider,
+          from: from_email,
+          fromName: from_name,
+          serverId: server_id,
+          modo_teste: testModeActive,
+          status_envio: 'erro',
+          erro_mensagem: error.message || 'Erro desconhecido',
+          erro_codigo: error.code || 'UNKNOWN',
+          erro_stack: error.stack || null,
+          erro_completo: {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+            stack: error.stack,
+            details: error.details,
+            response: error.response?.body || null
+          }
+        }
+      })
+    } catch (logError) {
+      console.error('Erro ao salvar log de erro:', logError)
+    }
+    
     return NextResponse.json(
       { 
         error: error.message || 'Erro ao enviar email de teste',
-        details: error.details || error.response?.body || null
+        details: error.details || error.response?.body || null,
+        hint: 'Verifique os logs em /admin/emails/logs para mais detalhes'
       },
       { status: 500 }
     )
