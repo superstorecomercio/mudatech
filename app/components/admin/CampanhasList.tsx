@@ -326,18 +326,18 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
   return (
     <div>
       {/* Botão Nova Campanha */}
-      <div className="mb-6 flex justify-end">
+      <div className="mb-4 sm:mb-6 flex justify-end">
         <button
           onClick={() => setShowNewModal(true)}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+          className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center"
         >
           <span>➕</span> Nova Campanha
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Busca */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -414,8 +414,8 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Tabela - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -723,10 +723,229 @@ export default function CampanhasList({ campanhas: initialCampanhas, hotsites, p
         </div>
       </div>
 
+      {/* Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {campanhasFiltradas.length > 0 ? (
+          campanhasFiltradas.map((campanha) => (
+            <div key={campanha.id} className="bg-white rounded-lg shadow-md p-4">
+              {editingId === campanha.id ? (
+                <div className="space-y-4">
+                  <div className="text-sm font-medium text-gray-900 mb-2">
+                    Editando: {campanha.empresa_nome}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Tipo de Empresa
+                      </label>
+                      <select
+                        value={editData.tipoempresa || 'Empresa de Mudança'}
+                        onChange={(e) =>
+                          setEditData({ ...editData, tipoempresa: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      >
+                        <option value="Empresa de Mudança">Empresa de Mudança</option>
+                        <option value="Carretos">Carretos</option>
+                        <option value="Guarda-Móveis">Guarda-Móveis</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Data de Vencimento
+                      </label>
+                      <input
+                        type="date"
+                        value={editData.data_fim}
+                        onChange={(e) =>
+                          setEditData({ ...editData, data_fim: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Valor Mensal (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editData.valor}
+                        onChange={(e) =>
+                          setEditData({ ...editData, valor: parseFloat(e.target.value) })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
+                      <select
+                        value={editData.ativo ? 'ativa' : 'inativa'}
+                        onChange={(e) =>
+                          setEditData({ ...editData, ativo: e.target.value === 'ativa' })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      >
+                        <option value="ativa">Ativa</option>
+                        <option value="inativa">Inativa</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={editData.participa_cotacao !== false}
+                          onChange={(e) =>
+                            setEditData({ ...editData, participa_cotacao: e.target.checked })
+                          }
+                          className="w-4 h-4 text-[#0073e6] focus:ring-[#0073e6] border-gray-300 rounded"
+                        />
+                        <span className="font-medium">Participa de Cotação</span>
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Limite de Orçamentos/Mês
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Ilimitado"
+                        value={editData.limite_orcamentos_mes}
+                        onChange={(e) =>
+                          setEditData({ ...editData, limite_orcamentos_mes: e.target.value ? parseInt(e.target.value) : '' })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => handleSave(campanha.id)}
+                        disabled={loading === campanha.id}
+                        className="flex-1 px-4 py-2 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors text-sm disabled:opacity-50"
+                      >
+                        {loading === campanha.id ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={loading === campanha.id}
+                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        {campanha.empresa_nome}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {campanha.cidade_nome || 'Sem cidade'}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeColor(
+                        campanha.plano_nome
+                      )}`}
+                    >
+                      {campanha.plano_nome}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Tipo:</span>
+                      <span className="font-medium text-gray-900">
+                        {campanha.tipoempresa || 'Empresa de Mudança'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Período:</span>
+                      <span className="font-medium text-gray-900">
+                        {formatDate(campanha.data_inicio)}
+                        {campanha.data_fim && ` - ${formatDate(campanha.data_fim)}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Valor:</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(campanha.valor)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Status:</span>
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          campanha.ativo
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {campanha.ativo ? 'Ativa' : 'Inativa'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2 border-t">
+                    <button
+                      onClick={() => handleEdit(campanha)}
+                      className="w-full px-4 py-2 text-[#0073e6] border border-[#0073e6] rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleToggleAtivo(campanha.id, campanha.ativo)}
+                      disabled={loading === campanha.id}
+                      className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 text-sm font-medium ${
+                        campanha.ativo
+                          ? 'text-red-600 border-red-600 hover:bg-red-50'
+                          : 'text-green-600 border-green-600 hover:bg-green-50'
+                      }`}
+                    >
+                      {loading === campanha.id
+                        ? '...'
+                        : campanha.ativo
+                        ? 'Desativar'
+                        : 'Ativar'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(campanha.id, campanha.empresa_nome)}
+                      disabled={loading === campanha.id}
+                      className="w-full px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 text-sm font-medium"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="text-gray-500">
+              {searchTerm || filterStatus !== 'todos' || filterPlano !== 'todos' ? (
+                <>
+                  <p className="font-medium">Nenhuma campanha encontrada</p>
+                  <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
+                </>
+              ) : (
+                <p>Nenhuma campanha cadastrada</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Modal Nova Campanha */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Nova Campanha</h2>
             
             <div className="space-y-4">

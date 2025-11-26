@@ -36,8 +36,8 @@ export default async function CidadesPage() {
 
   if (error) {
     console.error('Erro ao buscar cidades:', error);
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
+  return (
+    <div>
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           <p className="font-semibold">Erro ao carregar cidades</p>
           <p className="text-sm mt-1">{error.message}</p>
@@ -77,16 +77,16 @@ export default async function CidadesPage() {
   const cidadesNormais = cidades.filter(c => c.estado !== 'XX');
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Cidades</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Cidades</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Gerenciar cidades do sistema ({cidades.length} total)
           </p>
         </div>
         <Link href="/admin/cidades/novo">
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nova Cidade
           </Button>
@@ -104,18 +104,18 @@ export default async function CidadesPage() {
           </p>
           <div className="space-y-2">
             {cidadesComProblema.map((cidade) => (
-              <div key={cidade.id} className="bg-white rounded p-3 flex justify-between items-center">
-                <div>
-                  <span className="font-medium">{cidade.nome}</span>
-                  <span className="text-gray-500 text-sm ml-2">
+              <div key={cidade.id} className="bg-white rounded p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div className="flex-1">
+                  <span className="font-medium block sm:inline">{cidade.nome}</span>
+                  <span className="text-gray-500 text-xs sm:text-sm block sm:inline sm:ml-2">
                     (slug: {cidade.slug})
                   </span>
-                  <span className="text-yellow-600 text-sm ml-2">
+                  <span className="text-yellow-600 text-xs sm:text-sm block sm:inline sm:ml-2">
                     • {cidade.total_hotsites} hotsites
                   </span>
                 </div>
-                <Link href={`/admin/cidades/${cidade.id}`}>
-                  <Button size="sm" variant="outline">
+                <Link href={`/admin/cidades/${cidade.id}`} className="w-full sm:w-auto">
+                  <Button size="sm" variant="outline" className="w-full sm:w-auto">
                     Editar
                   </Button>
                 </Link>
@@ -145,64 +145,98 @@ export default async function CidadesPage() {
         </div>
       </div>
 
-      {/* Tabela de cidades */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cidade
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Slug
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hotsites
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Orçamentos
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {cidadesNormais.map((cidade) => (
-              <tr key={cidade.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {cidade.nome}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{cidade.slug}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                    {cidade.estado}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {cidade.total_hotsites}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {cidade.total_orcamentos}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link href={`/admin/cidades/${cidade.id}`}>
-                    <Button variant="outline" size="sm">
-                      Editar
-                    </Button>
-                  </Link>
-                </td>
+      {/* Tabela de cidades - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cidade
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Slug
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hotsites
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Orçamentos
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {cidadesNormais.map((cidade) => (
+                <tr key={cidade.id} className="hover:bg-gray-50">
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {cidade.nome}
+                    </div>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{cidade.slug}</div>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {cidade.estado}
+                    </span>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {cidade.total_hotsites}
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {cidade.total_orcamentos}
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link href={`/admin/cidades/${cidade.id}`}>
+                      <Button variant="outline" size="sm">
+                        Editar
+                      </Button>
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Cards de cidades - Mobile */}
+      <div className="md:hidden space-y-4">
+        {cidadesNormais.map((cidade) => (
+          <div key={cidade.id} className="bg-white rounded-lg shadow p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900">{cidade.nome}</h3>
+                <p className="text-xs text-gray-500 mt-1">{cidade.slug}</p>
+              </div>
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                {cidade.estado}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm mb-3">
+              <div>
+                <span className="text-gray-600">Hotsites: </span>
+                <span className="font-medium text-gray-900">{cidade.total_hotsites}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Orçamentos: </span>
+                <span className="font-medium text-gray-900">{cidade.total_orcamentos}</span>
+              </div>
+            </div>
+            <Link href={`/admin/cidades/${cidade.id}`} className="block">
+              <Button variant="outline" size="sm" className="w-full">
+                Editar
+              </Button>
+            </Link>
+          </div>
+        ))}
       </div>
 
       {cidades.length === 0 && (

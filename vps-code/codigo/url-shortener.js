@@ -216,14 +216,20 @@ async function criarLinkWhatsApp(telefone, dados) {
  */
 function criarMensagemSimplificada(dados) {
   const tipoImovelLabels = {
-    kitnet: 'Kitnet',
-    '1_quarto': 'Apto 1q',
-    '2_quartos': 'Apto 2q',
-    '3_mais': 'Apto 3q+',
-    comercial: 'Comercial'
+    casa: 'Casa',
+    apartamento: 'Apto',
+    empresa: 'Empresa'
+  };
+  
+  const metragemLabels = {
+    ate_50: 'Até 50m²',
+    '50_150': '50-150m²',
+    '150_300': '150-300m²',
+    acima_300: '300m²+'
   };
   
   const tipoImovel = tipoImovelLabels[dados.tipo_imovel] || dados.tipo_imovel || 'Não informado';
+  const metragem = metragemLabels[dados.metragem] || dados.metragem || 'Não informado';
   
   // Mensagem para empresas - versão otimizada para reduzir tamanho da URL
   let msg = `Vou mudar e preciso desse orçamento:\n\n`;
@@ -237,6 +243,7 @@ function criarMensagemSimplificada(dados) {
   msg += `📧 ${dados.email || 'Não informado'}\n`;
   msg += `📍 ${dados.cidadeOrigem || ''}, ${dados.estadoOrigem || ''} → ${dados.cidadeDestino || ''}, ${dados.estadoDestino || ''}\n`;
   msg += `🏠 Tipo: ${tipoImovel}\n`;
+  msg += `📏 Metragem: ${metragem}\n`;
   msg += `🚪 Elevador: ${dados.tem_elevador ? 'Sim' : 'Não'}\n`;
   msg += `📦 Embalagem: ${dados.precisa_embalagem ? 'Sim' : 'Não'}\n`;
   msg += `📏 Distância: ${dados.distanciaKm || 0}km\n`;

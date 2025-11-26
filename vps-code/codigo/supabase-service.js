@@ -34,11 +34,17 @@ async function salvarOrcamento(dados, resultadoIA) {
     });
     // Mapear tipo de imóvel
     const tipoImovelMap = {
-      'kitnet': 'kitnet',
-      '1_quarto': '1_quarto',
-      '2_quartos': '2_quartos',
-      '3_mais': '3_mais',
-      'comercial': 'comercial'
+      'casa': 'casa',
+      'apartamento': 'apartamento',
+      'empresa': 'empresa'
+    };
+    
+    // Mapear metragem
+    const metragemMap = {
+      'ate_50': 'ate_50',
+      '50_150': '50_150',
+      '150_300': '150_300',
+      'acima_300': 'acima_300'
     };
 
     // ✅ Preparar dados com nomes CORRETOS (snake_case + sufixos)
@@ -61,6 +67,7 @@ async function salvarOrcamento(dados, resultadoIA) {
       
       // Detalhes da mudança (snake_case)
       tipo_imovel: tipoImovelMap[dados.tipo_imovel] || dados.tipo_imovel,  // ✅ snake_case
+      metragem: metragemMap[dados.metragem] || dados.metragem || null,  // ✅ snake_case
       tem_elevador: dados.tem_elevador,            // ✅ snake_case
       andar: dados.andar || 1,
       precisa_embalagem: dados.precisa_embalagem,  // ✅ snake_case
@@ -289,14 +296,20 @@ async function salvarOrcamento(dados, resultadoIA) {
  */
 function criarMensagemWhatsApp(dados, resultadoIA) {
   const tipoImovelLabels = {
-    kitnet: 'Kitnet',
-    '1_quarto': 'Apartamento 1 quarto',
-    '2_quartos': 'Apartamento 2 quartos',
-    '3_mais': 'Apartamento 3+ quartos ou Casa',
-    comercial: 'Mudança Comercial'
+    casa: 'Casa',
+    apartamento: 'Apartamento',
+    empresa: 'Empresa'
+  };
+  
+  const metragemLabels = {
+    ate_50: 'Até 50 m²',
+    '50_150': '50 a 150 m²',
+    '150_300': '150 a 300 m²',
+    acima_300: 'Acima de 300 m²'
   };
   
   const tipoImovel = tipoImovelLabels[dados.tipo_imovel] || dados.tipo_imovel || 'Não informado';
+  const metragem = metragemLabels[dados.metragem] || dados.metragem || 'Não informado';
   
   // Mensagem mais curta para caber no limite do WhatsApp
   let mensagem = `Olá! Recebi um orçamento de mudança.\n\n`;
@@ -304,6 +317,7 @@ function criarMensagemWhatsApp(dados, resultadoIA) {
   mensagem += `👤 ${dados.nome || 'Não informado'}\n`;
   mensagem += `📍 ${resultadoIA.cidadeOrigem || ''}, ${resultadoIA.estadoOrigem || ''} → ${resultadoIA.cidadeDestino || ''}, ${resultadoIA.estadoDestino || ''}\n`;
   mensagem += `🏠 ${tipoImovel}\n`;
+  mensagem += `📏 ${metragem}\n`;
   mensagem += `📏 ${resultadoIA.distanciaKm || 0} km\n`;
   mensagem += `💰 R$ ${(resultadoIA.precoMin || 0).toLocaleString('pt-BR')} - R$ ${(resultadoIA.precoMax || 0).toLocaleString('pt-BR')}\n`;
   mensagem += `\nGostaria de uma cotação personalizada.`;

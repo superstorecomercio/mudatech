@@ -61,97 +61,174 @@ export default function HotsitesList({ hotsites: initialHotsites }: HotsitesList
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hotsite
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Localização
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Imagens
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {hotsitesFiltrados.length > 0 ? (
-              hotsitesFiltrados.map((hotsite) => (
-                <tr key={hotsite.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {hotsite.nome_exibicao || 'Sem nome'}
-                    </div>
-                    {hotsite.descricao && (
-                      <div className="text-sm text-gray-500 line-clamp-2 mt-1">
-                        {hotsite.descricao.substring(0, 100)}
-                        {hotsite.descricao.length > 100 && '...'}
+      {/* Tabela - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hotsite
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Localização
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Imagens
+                </th>
+                <th className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {hotsitesFiltrados.length > 0 ? (
+                hotsitesFiltrados.map((hotsite) => (
+                  <tr key={hotsite.id} className="hover:bg-gray-50">
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {hotsite.nome_exibicao || 'Sem nome'}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {hotsite.cidade || '-'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {hotsite.estado || '-'}
-                    </div>
-                    {hotsite.endereco && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        {hotsite.endereco.substring(0, 40)}
-                        {hotsite.endereco.length > 40 && '...'}
+                      {hotsite.descricao && (
+                        <div className="text-sm text-gray-500 line-clamp-2 mt-1">
+                          {hotsite.descricao.substring(0, 100)}
+                          {hotsite.descricao.length > 100 && '...'}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {hotsite.cidade || '-'}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {hotsite.logo_url && (
-                        <span className="text-xs text-green-600">✓ Logo</span>
+                      <div className="text-sm text-gray-500">
+                        {hotsite.estado || '-'}
+                      </div>
+                      {hotsite.endereco && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {hotsite.endereco.substring(0, 40)}
+                          {hotsite.endereco.length > 40 && '...'}
+                        </div>
                       )}
-                      {hotsite.foto1_url && (
-                        <span className="text-xs text-green-600">✓ Foto1</span>
-                      )}
-                      {!hotsite.logo_url && !hotsite.foto1_url && (
-                        <span className="text-xs text-gray-400">Sem imagens</span>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {hotsite.logo_url && (
+                          <span className="text-xs text-green-600">✓ Logo</span>
+                        )}
+                        {hotsite.foto1_url && (
+                          <span className="text-xs text-green-600">✓ Foto1</span>
+                        )}
+                        {!hotsite.logo_url && !hotsite.foto1_url && (
+                          <span className="text-xs text-gray-400">Sem imagens</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link
+                        href={`/admin/hotsites/${hotsite.id}`}
+                        className="text-[#0073e6] hover:text-[#005bb5] font-medium"
+                      >
+                        Editar
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center">
+                    <div className="text-gray-500">
+                      {searchTerm ? (
+                        <>
+                          <p className="font-medium">Nenhum hotsite encontrado</p>
+                          <p className="text-sm mt-1">
+                            Tente ajustar sua busca
+                          </p>
+                        </>
+                      ) : (
+                        <p>Nenhum hotsite cadastrado</p>
                       )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link
-                      href={`/admin/hotsites/${hotsite.id}`}
-                      className="text-[#0073e6] hover:text-[#005bb5]"
-                    >
-                      Editar
-                    </Link>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="px-6 py-12 text-center">
-                  <div className="text-gray-500">
-                    {searchTerm ? (
-                      <>
-                        <p className="font-medium">Nenhum hotsite encontrado</p>
-                        <p className="text-sm mt-1">
-                          Tente ajustar sua busca
-                        </p>
-                      </>
-                    ) : (
-                      <p>Nenhum hotsite cadastrado</p>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {hotsitesFiltrados.length > 0 ? (
+          hotsitesFiltrados.map((hotsite) => (
+            <div key={hotsite.id} className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {hotsite.nome_exibicao || 'Sem nome'}
+                  </h3>
+                  {hotsite.descricao && (
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                      {hotsite.descricao}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2 mb-3">
+                <div>
+                  <span className="text-xs text-gray-500">Localização: </span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {hotsite.cidade || '-'}, {hotsite.estado || '-'}
+                  </span>
+                </div>
+                {hotsite.endereco && (
+                  <div>
+                    <span className="text-xs text-gray-500">Endereço: </span>
+                    <span className="text-xs text-gray-600">
+                      {hotsite.endereco}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-xs text-gray-500">Imagens: </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    {hotsite.logo_url && (
+                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Logo</span>
+                    )}
+                    {hotsite.foto1_url && (
+                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Foto1</span>
+                    )}
+                    {!hotsite.logo_url && !hotsite.foto1_url && (
+                      <span className="text-xs text-gray-400">Sem imagens</span>
                     )}
                   </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </div>
+              </div>
+
+              <Link
+                href={`/admin/hotsites/${hotsite.id}`}
+                className="block w-full px-4 py-2 bg-[#0073e6] text-white rounded-md hover:bg-[#005bb5] transition-colors text-center font-medium text-sm"
+              >
+                Editar
+              </Link>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="text-gray-500">
+              {searchTerm ? (
+                <>
+                  <p className="font-medium">Nenhum hotsite encontrado</p>
+                  <p className="text-sm mt-1">
+                    Tente ajustar sua busca
+                  </p>
+                </>
+              ) : (
+                <p>Nenhum hotsite cadastrado</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

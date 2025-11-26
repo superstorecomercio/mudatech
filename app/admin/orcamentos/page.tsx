@@ -91,68 +91,68 @@ export default async function OrcamentosPage() {
   const comErro = orcamentos?.filter(o => o.status_envio_email === 'erro').length || 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orçamentos</h1>
-          <p className="text-gray-500 mt-1">Gerencie todos os orçamentos recebidos</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orçamentos</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie todos os orçamentos recebidos</p>
         </div>
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{total}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Total</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Eye className="w-6 h-6 text-blue-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Na Fila</p>
-              <p className="text-2xl font-bold text-orange-600">{naFila}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Na Fila</p>
+              <p className="text-xl sm:text-2xl font-bold text-orange-600">{naFila}</p>
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-orange-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Enviados</p>
-              <p className="text-2xl font-bold text-green-600">{enviados}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Enviados</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">{enviados}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Com Erro</p>
-              <p className="text-2xl font-bold text-red-600">{comErro}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Com Erro</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600">{comErro}</p>
             </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabela de Orçamentos */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Tabela de Orçamentos - Desktop */}
+      <div className="hidden lg:block bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -281,6 +281,97 @@ export default async function OrcamentosPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Cards - Mobile */}
+      <div className="lg:hidden space-y-4">
+        {orcamentos && orcamentos.length > 0 ? (
+          orcamentos.map((orcamento: Orcamento) => (
+            <div key={orcamento.id} className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {orcamento.nome_cliente}
+                  </h3>
+                  {orcamento.codigo_orcamento && (
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mr-2 font-mono mt-1">
+                      {orcamento.codigo_orcamento}
+                    </span>
+                  )}
+                </div>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[orcamento.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+                  {statusLabels[orcamento.status as keyof typeof statusLabels] || orcamento.status}
+                </span>
+              </div>
+
+              <div className="space-y-2 mb-3">
+                <div>
+                  <span className="text-xs text-gray-500">Rota:</span>
+                  <p className="text-sm font-medium text-gray-900">{orcamento.origem_completo}</p>
+                  <p className="text-xs text-gray-500">↓</p>
+                  <p className="text-sm font-medium text-gray-900">{orcamento.destino_completo}</p>
+                  {orcamento.distancia_km && (
+                    <p className="text-xs text-gray-500 mt-1">📍 {orcamento.distancia_km} km</p>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Tipo:</span>
+                  <span className="font-medium text-gray-900">
+                    {orcamento.tipo_imovel?.replace('_', ' ')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Preço:</span>
+                  <span className="font-medium text-gray-900">
+                    R$ {orcamento.preco_min?.toLocaleString('pt-BR')} - R$ {orcamento.preco_max?.toLocaleString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Email:</span>
+                  <span className="font-medium text-gray-900 text-xs truncate ml-2">
+                    {orcamento.email_cliente}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">WhatsApp:</span>
+                  <span className="font-medium text-gray-900 text-xs">
+                    {orcamento.whatsapp}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Envio Email:</span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${statusEnvioColors[orcamento.status_envio_email as keyof typeof statusEnvioColors] || 'bg-gray-100 text-gray-800'}`}>
+                    <StatusIcon status={orcamento.status_envio_email} />
+                    {statusEnvioLabels[orcamento.status_envio_email as keyof typeof statusEnvioLabels] || orcamento.status_envio_email}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Hotsites:</span>
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                    {orcamento.hotsites_notificados || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Data:</span>
+                  <span className="font-medium text-gray-900 text-xs">
+                    {new Date(orcamento.created_at).toLocaleDateString('pt-BR')} {new Date(orcamento.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+
+              <Link
+                href={`/admin/orcamentos/${orcamento.id}`}
+                className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium text-sm"
+              >
+                Ver Detalhes
+              </Link>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <p className="text-gray-500">Nenhum orçamento encontrado</p>
+          </div>
+        )}
       </div>
 
       {/* Info sobre envio automático */}

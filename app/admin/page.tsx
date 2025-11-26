@@ -43,21 +43,21 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {stats.map((stat) => (
           <Link
             key={stat.title}
             href={stat.href}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            className="bg-white rounded-lg shadow-md p-4 sm:p-6 hover:shadow-lg transition-all hover:scale-[1.02]"
           >
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <div className="flex-1">
+                <p className="text-gray-600 text-xs sm:text-sm mb-1">{stat.title}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
               </div>
-              <div className={`${stat.color} w-12 h-12 rounded-full flex items-center justify-center text-2xl`}>
+              <div className={`${stat.color} w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xl sm:text-2xl flex-shrink-0`}>
                 {stat.icon}
               </div>
             </div>
@@ -65,24 +65,24 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Link
             href="/admin/hotsites"
-            className="px-6 py-3 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors text-center font-medium"
+            className="px-4 sm:px-6 py-3 bg-[#0073e6] text-white rounded-lg hover:bg-[#005bb5] transition-colors text-center font-medium text-sm sm:text-base"
           >
             Gerenciar Hotsites
           </Link>
           <Link
             href="/admin/campanhas"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium"
+            className="px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-medium text-sm sm:text-base"
           >
             Gerenciar Campanhas
           </Link>
           <Link
             href="/admin/orcamentos"
-            className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-center font-medium"
+            className="px-4 sm:px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-center font-medium text-sm sm:text-base sm:col-span-2 lg:col-span-1"
           >
             Ver Orçamentos
           </Link>

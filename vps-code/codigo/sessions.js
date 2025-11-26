@@ -6,6 +6,7 @@ const PERGUNTAS = {
   ORIGEM: 'origem',
   DESTINO: 'destino',
   TIPO_IMOVEL: 'tipo_imovel',
+  METRAGEM: 'metragem',
   ELEVADOR: 'elevador',
   EMBALAGEM: 'embalagem',
   NOME: 'nome',
@@ -20,6 +21,7 @@ const ORDEM_PERGUNTAS = [
   PERGUNTAS.ORIGEM,
   PERGUNTAS.DESTINO,
   PERGUNTAS.TIPO_IMOVEL,
+  PERGUNTAS.METRAGEM,
   PERGUNTAS.ELEVADOR,
   PERGUNTAS.EMBALAGEM,
   PERGUNTAS.NOME,
@@ -34,7 +36,9 @@ function criarSessao(userId) {
     userId,
     etapaAtual: PERGUNTAS.ORIGEM,
     dados: {},
-    criado_em: new Date()
+    criado_em: new Date(),
+    ultima_pergunta_enviada_em: null, // Timestamp da última pergunta enviada
+    processando: false // Flag para evitar processamento simultâneo
   };
   sessions.set(userId, sessao);
   return sessao;
@@ -51,6 +55,22 @@ function atualizarSessao(userId, dados) {
     sessions.set(userId, sessao);
   }
   return sessao;
+}
+
+function marcarPerguntaEnviada(userId) {
+  const sessao = sessions.get(userId);
+  if (sessao) {
+    sessao.ultima_pergunta_enviada_em = new Date();
+    sessions.set(userId, sessao);
+  }
+}
+
+function setProcessando(userId, processando) {
+  const sessao = sessions.get(userId);
+  if (sessao) {
+    sessao.processando = processando;
+    sessions.set(userId, sessao);
+  }
 }
 
 function proximaEtapa(userId) {
@@ -83,5 +103,7 @@ module.exports = {
   getSessao,
   atualizarSessao,
   proximaEtapa,
-  limparSessao
+  limparSessao,
+  marcarPerguntaEnviada,
+  setProcessando
 };

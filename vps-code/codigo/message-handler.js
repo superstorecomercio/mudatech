@@ -1,4 +1,4 @@
-const { PERGUNTAS, criarSessao, getSessao, atualizarSessao, proximaEtapa, limparSessao } = require('./sessions');
+const { PERGUNTAS, criarSessao, getSessao, atualizarSessao, proximaEtapa, limparSessao, marcarPerguntaEnviada, setProcessando } = require('./sessions');
 const { enviarMensagem, enviarBotoes, enviarLista, enviarTyping } = require('./whatsapp');
 const { calcularOrcamentoComIA } = require('./openai-service');
 const { salvarOrcamento } = require('./supabase-service');
@@ -29,8 +29,9 @@ function ehMensagemAtivacao(mensagem) {
   const temCalcular = msgNormalizada.includes('calcular');
   const temMudanca = msgNormalizada.includes('mudanca') || msgNormalizada.includes('mudança');
   
-  // Verificar se contém "olá" (com ou sem acento)
-  const temOla = msgNormalizada.includes('ola') || msgNormalizada.includes('olá');
+  // Verificar se contém "olá" (com ou sem acento) - PRIORIDADE: aceita apenas "olá"
+  const temOla = msgNormalizada === 'ola' || msgNormalizada === 'olá' || 
+                 msgNormalizada.includes('ola') || msgNormalizada.includes('olá');
   
   // Verificar palavras-chave simples
   const temPalavraChave = PALAVRAS_ATIVACAO.some(palavra => {
@@ -42,7 +43,7 @@ function ehMensagemAtivacao(mensagem) {
   
   // Ativar se:
   // 1. Contém "calcular" E "mudança" (com ou sem acento)
-  // 2. Contém "olá" (com ou sem acento)
+  // 2. Contém "olá" (com ou sem acento) - aceita apenas "olá" ou mensagens com "olá"
   // 3. Contém qualquer palavra-chave simples
   return (temCalcular && temMudanca) || temOla || temPalavraChave;
 }
@@ -97,7 +98,14 @@ async function processarMensagem(from, mensagem) {
     // ⚡ ENVIAR TYPING IMEDIATAMENTE (melhora percepção de velocidade)
   //  enviarTyping(from).catch(() => {});
     
+    console.log(`[processarMensagem] Processando mensagem de ${from}: "${mensagem}"`);
+    
     let sessao = getSessao(from);
+    if (sessao) {
+      console.log(`[processarMensagem] Sessão encontrada. Etapa atual: ${sessao.etapaAtual}`);
+    } else {
+      console.log(`[processarMensagem] Nenhuma sessão encontrada para ${from}`);
+    }
     
     // ✅ LÓGICA DE ATIVAÇÃO
     // Se não tem sessão E não é mensagem de ativação → IGNORAR
@@ -113,10 +121,34 @@ async function processarMensagem(from, mensagem) {
       atualizarSessao(from, { whatsapp: from });
       
       console.log(`📤 ENVIANDO mensagem de boas-vindas para ${from}`);
+      marcarPerguntaEnviada(from);
       await enviarMensagem(from, '👋 Olá! Sou a *Julia*!\n\nVou calcular o valor da sua mudança agora — e o melhor: o preço aparece na hora, em poucos segundos. No final, também te mostro quais empresas estão disponíveis para seu trajeto.\n\n📍 *Para começar, me diga: de onde você está saindo?*');
       console.log(`✅ Mensagem enviada com sucesso para ${from}`);
       return;
     }
+
+    // ✅ VALIDAÇÃO: Evitar processamento de mensagens muito rápidas
+    // Se está processando outra mensagem, ignorar
+    if (sessao.processando) {
+      console.log(`[processarMensagem] Mensagem ignorada de ${from}: ainda processando mensagem anterior`);
+      await enviarMensagem(from, '⏳ Aguarde um momento, estou processando sua resposta anterior...');
+      return;
+    }
+
+    // Validar se a mensagem chegou muito rápido após a última pergunta (menos de 2 segundos)
+    if (sessao.ultima_pergunta_enviada_em) {
+      const tempoDesdeUltimaPergunta = new Date() - new Date(sessao.ultima_pergunta_enviada_em);
+      const tempoMinimo = 2000; // 2 segundos em milissegundos
+      
+      if (tempoDesdeUltimaPergunta < tempoMinimo) {
+        console.log(`[processarMensagem] Mensagem muito rápida de ${from}: ${tempoDesdeUltimaPergunta}ms após última pergunta`);
+        await enviarMensagem(from, '⏳ Aguarde um momento, estou processando... Por favor, aguarde minha resposta antes de digitar novamente.');
+        return;
+      }
+    }
+
+    // Marcar como processando
+    setProcessando(from, true);
 
     // ✅ A PARTIR DAQUI: Pessoa está em conversa ativa
     const etapa = sessao.etapaAtual;
@@ -124,25 +156,27 @@ async function processarMensagem(from, mensagem) {
     if (etapa === PERGUNTAS.ORIGEM) {
       atualizarSessao(from, { origem: mensagem });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       await enviarMensagem(from, '✅ Ótimo!\n\n🎯 *E para onde você está se mudando?*');
     }
     
     else if (etapa === PERGUNTAS.DESTINO) {
       atualizarSessao(from, { destino: mensagem });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       
       await enviarLista(from, 
-        '🏠 *Qual o tipo do seu imóvel?*',
+        '🏠 *Qual o tipo de imóvel na origem?*',
         'Selecionar tipo',
         [
           {
-            title: 'Tipo de Imóvel',
+            title: 'Tipo de Imóvel na Origem',
             rows: [
-              { id: 'kitnet', title: 'Kitnet', description: 'Pequeno porte' },
-              { id: '1_quarto', title: 'Apartamento 1 quarto', description: 'Pequeno a médio' },
-              { id: '2_quartos', title: 'Apartamento 2 quartos', description: 'Médio porte' },
-              { id: '3_mais', title: 'Apartamento 3+ quartos', description: 'Grande porte' },
-              { id: 'comercial', title: 'Comercial', description: 'Escritório/Loja' }
+              { id: 'casa', title: 'Casa', description: 'Residencial' },
+              { id: 'apartamento', title: 'Apartamento', description: 'Residencial' },
+              { id: 'empresa', title: 'Empresa', description: 'Comercial' }
             ]
           }
         ]
@@ -150,21 +184,112 @@ async function processarMensagem(from, mensagem) {
     }
     
     else if (etapa === PERGUNTAS.TIPO_IMOVEL) {
-      const tipos = ['kitnet', '1_quarto', '2_quartos', '3_mais', 'comercial'];
-      if (!tipos.includes(mensagem.toLowerCase())) {
-        await enviarMensagem(from, '❌ Opção inválida. Por favor, selecione uma das opções da lista.');
-        return;
+      try {
+        const tipos = ['casa', 'apartamento', 'empresa'];
+        const mensagemLower = mensagem.toLowerCase().trim();
+        
+        console.log(`[TIPO_IMOVEL] Mensagem recebida: "${mensagem}" (normalizada: "${mensagemLower}")`);
+        console.log(`[TIPO_IMOVEL] Tipos válidos:`, tipos);
+        
+        if (!tipos.includes(mensagemLower)) {
+          console.log(`[TIPO_IMOVEL] Tipo inválido: ${mensagemLower}`);
+          setProcessando(from, false);
+          await enviarMensagem(from, '❌ Opção inválida. Por favor, selecione uma das opções da lista.');
+          return;
+        }
+        
+        console.log(`[TIPO_IMOVEL] Tipo válido: ${mensagemLower}`);
+        atualizarSessao(from, { tipo_imovel: mensagemLower });
+        proximaEtapa(from);
+        
+        try {
+          await enviarLista(from, 
+            '📏 *Qual a metragem aproximada do imóvel na origem?*',
+            'Selecionar metragem',
+            [
+              {
+                title: 'Metragem Aproximada na Origem',
+                rows: [
+                  { id: 'ate_50', title: 'Até 50 m²', description: 'Pequeno' },
+                  { id: '50_150', title: '50 a 150 m²', description: 'Médio' },
+                  { id: '150_300', title: '150 a 300 m²', description: 'Grande' },
+                  { id: 'acima_300', title: 'Acima de 300 m²', description: 'Muito grande' }
+                ]
+              }
+            ]
+          );
+          console.log(`[TIPO_IMOVEL] Lista de metragem enviada com sucesso`);
+        setProcessando(from, false);
+        marcarPerguntaEnviada(from);
+        } catch (listaError) {
+          console.error(`[TIPO_IMOVEL] Erro ao enviar lista de metragem:`, listaError);
+          // Se falhar ao enviar lista, tentar enviar mensagem simples
+          await enviarMensagem(from, '📏 *Qual a metragem aproximada do imóvel na origem?*\n\nDigite:\n1️⃣ Até 50 m²\n2️⃣ 50 a 150 m²\n3️⃣ 150 a 300 m²\n4️⃣ Acima de 300 m²');
+          setProcessando(from, false);
+          marcarPerguntaEnviada(from);
+        }
+      } catch (error) {
+        console.error(`[TIPO_IMOVEL] Erro ao processar tipo de imóvel:`, error);
+        setProcessando(from, false);
+        throw error;
       }
-      atualizarSessao(from, { tipo_imovel: mensagem.toLowerCase() });
-      proximaEtapa(from);
-      
-      await enviarBotoes(from,
-        '🛗 *O imóvel tem elevador?*',
-        [
-          { id: 'elevador_sim', title: 'Sim' },
-          { id: 'elevador_nao', title: 'Não' }
-        ]
-      );
+    }
+    
+    else if (etapa === PERGUNTAS.METRAGEM) {
+      try {
+        const metragens = ['ate_50', '50_150', '150_300', 'acima_300'];
+        const mensagemLower = mensagem.toLowerCase().trim();
+        
+        console.log(`[METRAGEM] Mensagem recebida: "${mensagem}" (normalizada: "${mensagemLower}")`);
+        console.log(`[METRAGEM] Metragens válidas:`, metragens);
+        
+        // Mapear números digitados para IDs de metragem
+        const mapeamentoNumeros = {
+          '1': 'ate_50',
+          '2': '50_150',
+          '3': '150_300',
+          '4': 'acima_300'
+        };
+        
+        let metragemSelecionada = null;
+        
+        // Se digitou número, mapear para o ID correspondente
+        if (mapeamentoNumeros[mensagemLower]) {
+          metragemSelecionada = mapeamentoNumeros[mensagemLower];
+          console.log(`[METRAGEM] Número digitado "${mensagemLower}" mapeado para "${metragemSelecionada}"`);
+        } 
+        // Se digitou o ID diretamente
+        else if (metragens.includes(mensagemLower)) {
+          metragemSelecionada = mensagemLower;
+          console.log(`[METRAGEM] ID válido recebido: "${metragemSelecionada}"`);
+        }
+        
+        if (!metragemSelecionada) {
+          console.log(`[METRAGEM] Metragem inválida: ${mensagemLower}`);
+          setProcessando(from, false);
+          await enviarMensagem(from, '❌ Opção inválida. Por favor, selecione uma das opções da lista ou digite 1, 2, 3 ou 4.');
+          return;
+        }
+        
+        console.log(`[METRAGEM] Metragem válida: ${metragemSelecionada}`);
+        atualizarSessao(from, { metragem: metragemSelecionada });
+        proximaEtapa(from);
+        
+        setProcessando(from, false);
+        marcarPerguntaEnviada(from);
+        await enviarBotoes(from,
+          '🛗 *O imóvel tem elevador?*',
+          [
+            { id: 'elevador_sim', title: 'Sim' },
+            { id: 'elevador_nao', title: 'Não' }
+          ]
+        );
+        console.log(`[METRAGEM] Botões de elevador enviados com sucesso`);
+      } catch (error) {
+        console.error(`[METRAGEM] Erro ao processar metragem:`, error);
+        setProcessando(from, false);
+        throw error;
+      }
     }
     
     else if (etapa === PERGUNTAS.ELEVADOR) {
@@ -174,6 +299,8 @@ async function processarMensagem(from, mensagem) {
         andar: temElevador ? 1 : 2
       });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       
       await enviarBotoes(from,
         '📦 *Você precisa de embalagem e desmontagem de móveis?*',
@@ -188,6 +315,8 @@ async function processarMensagem(from, mensagem) {
       const precisaEmbalagem = mensagem.toLowerCase().includes('sim') || mensagem === 'emb_sim';
       atualizarSessao(from, { precisa_embalagem: precisaEmbalagem });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       
       await enviarMensagem(from, '✅ *Perfeito!* Analisando sua rota e o porte da mudança...\n\nSua mudança parece ser de porte médio na região informada.\n\nNormalmente, mudanças desse tipo ficam em uma faixa de preço bem definida, dependendo da distância, dificuldade de acesso e volume transportado.\n\n💬 Para te mostrar a faixa real de preço baseada em centenas de mudanças parecidas e ainda te enviar cotações verificadas de empresas de mudança, me informe um contato rápido.\n\n📝 *Qual é o seu nome?*');
     }
@@ -195,27 +324,35 @@ async function processarMensagem(from, mensagem) {
     else if (etapa === PERGUNTAS.NOME) {
       atualizarSessao(from, { nome: mensagem });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       await enviarMensagem(from, `Prazer, ${mensagem}! 😊\n\n📧 *Qual o seu e-mail?*`);
     }
     
     else if (etapa === PERGUNTAS.EMAIL) {
       if (!validarEmail(mensagem)) {
+        setProcessando(from, false);
         await enviarMensagem(from, '❌ E-mail inválido. Por favor, digite um e-mail válido (ex: seuemail@exemplo.com)');
         return;
       }
       atualizarSessao(from, { email: mensagem });
       proximaEtapa(from);
-      await enviarMensagem(from, '📅 *Qual a data estimada da mudança?* _(opcional)_\n\n_(Digite no formato DD/MM/AAAA ou "pular" se não souber)_');
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
+      await enviarMensagem(from, '📅 *Qual a data estimada da mudança?* _(opcional)_\n\n_(Digite no formato DDMMAAAA, exemplo: 25122025 para 25/12/2025, ou "pular" se não souber)_');
     }
     
     else if (etapa === PERGUNTAS.DATA) {
       const dataValidada = validarData(mensagem);
       if (dataValidada === false) {
-        await enviarMensagem(from, '❌ Data inválida. Use o formato DD/MM/AAAA ou digite "pular".');
+        setProcessando(from, false);
+        await enviarMensagem(from, '❌ Data inválida. Use o formato DDMMAAAA (exemplo: 25122025 para 25/12/2025) ou digite "pular".');
         return;
       }
       atualizarSessao(from, { data_estimada: dataValidada });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       
       await enviarBotoes(from,
         '📝 *Gostaria de enviar uma lista de objetos ou informações adicionais para um orçamento mais preciso?*',
@@ -230,10 +367,13 @@ async function processarMensagem(from, mensagem) {
       const querLista = mensagem.toLowerCase().includes('sim') || mensagem === 'lista_sim';
       atualizarSessao(from, { quer_lista: querLista });
       proximaEtapa(from);
+      setProcessando(from, false);
+      marcarPerguntaEnviada(from);
       
       if (querLista) {
         await enviarMensagem(from, '📝 *Ótimo! Envie a lista de objetos ou informações adicionais sobre sua mudança.*\n\n_Ex: Sofá de 3 lugares, mesa de jantar com 6 cadeiras, geladeira, fogão, guarda-roupa..._\n\n_💡 Você também pode incluir informações como: itens frágeis, objetos de grande porte, necessidade de desmontagem, etc._');
       } else {
+        setProcessando(from, false);
         await finalizarOrcamento(from);
       }
     }
@@ -241,11 +381,13 @@ async function processarMensagem(from, mensagem) {
     else if (etapa === PERGUNTAS.LISTA_TEXTO) {
       atualizarSessao(from, { lista_objetos: mensagem });
       proximaEtapa(from);
+      setProcessando(from, false);
       await finalizarOrcamento(from);
     }
     
   } catch (error) {
     console.error('Erro ao processar mensagem:', error);
+    setProcessando(from, false);
     await enviarMensagem(from, '❌ Desculpe, ocorreu um erro. Digite *oi* para começar novamente.');
     limparSessao(from);
   }
@@ -276,11 +418,16 @@ async function finalizarOrcamento(from) {
     
     // Formatar e enviar resultado
     const tipoImovelLabels = {
-      kitnet: 'Kitnet',
-      '1_quarto': 'Apartamento 1 quarto',
-      '2_quartos': 'Apartamento 2 quartos',
-      '3_mais': 'Apartamento 3+ quartos ou Casa',
-      comercial: 'Mudança Comercial'
+      casa: 'Casa',
+      apartamento: 'Apartamento',
+      empresa: 'Empresa'
+    };
+    
+    const metragemLabels = {
+      ate_50: 'Até 50 m²',
+      '50_150': '50 a 150 m²',
+      '150_300': '150 a 300 m²',
+      acima_300: 'Acima de 300 m²'
     };
     
     const resultado = `
@@ -292,7 +439,8 @@ ${resultadoSalvamento && resultadoSalvamento.codigo_orcamento ? `\n🔖 *Código
 📍 *Origem:* ${resultadoIA.cidadeOrigem}, ${resultadoIA.estadoOrigem}
 🎯 *Destino:* ${resultadoIA.cidadeDestino}, ${resultadoIA.estadoDestino}
 
-🏠 *Tipo:* ${tipoImovelLabels[sessao.dados.tipo_imovel]}
+🏠 *Tipo:* ${tipoImovelLabels[sessao.dados.tipo_imovel] || sessao.dados.tipo_imovel}
+📏 *Metragem:* ${metragemLabels[sessao.dados.metragem] || sessao.dados.metragem || 'Não informado'}
 🚪 *Elevador:* ${sessao.dados.tem_elevador ? 'Sim' : 'Não'}
 📦 *Embalagem:* ${sessao.dados.precisa_embalagem ? 'Sim, completa' : 'Não precisa'}
 
@@ -341,10 +489,12 @@ Digite *nova cotação* para fazer outro orçamento.
     }
     
     // ✅ Limpar sessão (pessoa não receberá mais respostas automáticas)
+    setProcessando(from, false);
     limparSessao(from);
     
   } catch (error) {
     console.error('Erro ao finalizar orçamento:', error);
+    setProcessando(from, false);
     await enviarMensagem(from, '❌ Desculpe, ocorreu um erro ao processar seu orçamento. Por favor, tente novamente mais tarde.');
     limparSessao(from);
   }
