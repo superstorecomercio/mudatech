@@ -87,8 +87,24 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // Atualizar cache
-    setTestModeConfig(enabled)
+    // Buscar email de teste da configuração de email
+    let testEmail: string | undefined
+    try {
+      const { data: emailConfig } = await supabase
+        .from('configuracoes')
+        .select('valor')
+        .eq('chave', 'email_config')
+        .single()
+
+      if (emailConfig?.valor?.test_email) {
+        testEmail = emailConfig.valor.test_email
+      }
+    } catch (error) {
+      // Ignorar erro, usar padrão
+    }
+
+    // Atualizar cache com email de teste
+    setTestModeConfig(enabled, testEmail)
 
     return NextResponse.json({
       success: true,
