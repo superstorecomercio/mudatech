@@ -51,12 +51,65 @@ export async function sendEmail(
 
     const response = await client.send(message)
 
+    // Salvar log do email enviado no banco de dados
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/server')
+      const supabase = createAdminClient()
+      
+      // Gerar código de rastreamento único
+      const codigoRastreamento = `SENT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      
+      await supabase.from('email_tracking').insert({
+        codigo_rastreamento: codigoRastreamento,
+        template_tipo: 'email_enviado',
+        destinatario_email: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        assunto: options.subject,
+        status_envio: 'enviado',
+        metadata: {
+          provider: 'socketlabs',
+          from: options.from,
+          fromName: options.fromName,
+          messageId: response.transactionReceipt || response.messageId,
+          modo_teste: false
+        }
+      })
+    } catch (error) {
+      // Se falhar ao salvar log, apenas registrar (não quebrar o envio)
+      console.error('Erro ao salvar log de email:', error)
+    }
+
     // SocketLabs retorna um objeto com transactionReceipt
     return {
       success: true,
       messageId: response.transactionReceipt || response.messageId || 'sent'
     }
   } catch (error: any) {
+    // Salvar log de erro no banco de dados
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/server')
+      const supabase = createAdminClient()
+      
+      const codigoRastreamento = `ERROR-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      
+      await supabase.from('email_tracking').insert({
+        codigo_rastreamento: codigoRastreamento,
+        template_tipo: 'email_erro',
+        destinatario_email: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        assunto: options.subject,
+        status_envio: 'erro',
+        erro_mensagem: error.message || error.errorMessage || 'Erro desconhecido',
+        metadata: {
+          provider: 'socketlabs',
+          from: options.from,
+          fromName: options.fromName,
+          errorCode: error.code,
+          modo_teste: false
+        }
+      })
+    } catch (logError) {
+      console.error('Erro ao salvar log de erro:', logError)
+    }
+    
     if (error.code === 'MODULE_NOT_FOUND') {
       return {
         success: false,

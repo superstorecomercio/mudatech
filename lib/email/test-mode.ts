@@ -10,7 +10,7 @@ interface TestEmailLog {
   provider: string
 }
 
-// Armazena emails enviados em modo de teste (em memória)
+// Armazena emails enviados em modo de teste (em memória - cache)
 const testEmailLogs: TestEmailLog[] = []
 
 // Cache da configuração do modo de teste (atualizado via API)
@@ -150,11 +150,40 @@ export async function interceptTestEmail(
     provider
   }
   
+  // Adicionar ao cache em memória
   testEmailLogs.push(log)
   
-  // Limitar logs a 100 emails (evitar consumo excessivo de memória)
+  // Limitar logs em memória a 100 emails (evitar consumo excessivo de memória)
   if (testEmailLogs.length > 100) {
     testEmailLogs.shift()
+  }
+  
+  // Salvar no banco de dados (email_tracking)
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const supabase = createAdminClient()
+    
+    // Gerar código de rastreamento único
+    const codigoRastreamento = `TEST-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+    
+    await supabase.from('email_tracking').insert({
+      codigo_rastreamento: codigoRastreamento,
+      template_tipo: 'teste_configuracao',
+      destinatario_email: originalTo.join(', '),
+      assunto: options.subject,
+      status_envio: 'enviado',
+      metadata: {
+        modo_teste: true,
+        destinatario_original: originalTo,
+        destinatario_redirecionado: testEmail,
+        provider,
+        from: options.from,
+        fromName: options.fromName
+      }
+    })
+  } catch (error) {
+    // Se falhar ao salvar no banco, apenas logar (não quebrar o fluxo)
+    console.error('Erro ao salvar log de teste no banco:', error)
   }
   
   // Adicionar aviso no HTML do email
@@ -186,10 +215,43 @@ export async function interceptTestEmail(
 }
 
 /**
- * Obtém logs de emails em modo de teste
+ * Obtém logs de emails em modo de teste (do banco de dados)
  */
-export function getTestEmailLogs(): TestEmailLog[] {
-  return [...testEmailLogs]
+export async function getTestEmailLogs(): Promise<TestEmailLog[]> {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const supabase = createAdminClient()
+    
+    // Buscar logs de teste do banco
+    const { data, error } = await supabase
+      .from('email_tracking')
+      .select('*')
+      .eq('status_envio', 'enviado')
+      .or('template_tipo.eq.teste_configuracao,metadata->modo_teste.eq.true')
+      .order('enviado_em', { ascending: false })
+      .limit(100)
+    
+    if (error) {
+      console.error('Erro ao buscar logs de teste:', error)
+      // Fallback para cache em memória
+      return [...testEmailLogs]
+    }
+    
+    // Converter para formato TestEmailLog
+    return (data || []).map(item => ({
+      to: item.metadata?.destinatario_original || item.destinatario_email,
+      subject: item.assunto,
+      html: '', // Não salvar HTML completo no banco (muito grande)
+      from: item.metadata?.from || '',
+      fromName: item.metadata?.fromName,
+      timestamp: item.enviado_em,
+      provider: item.metadata?.provider || 'unknown'
+    }))
+  } catch (error) {
+    console.error('Erro ao buscar logs de teste:', error)
+    // Fallback para cache em memória
+    return [...testEmailLogs]
+  }
 }
 
 /**
@@ -202,8 +264,8 @@ export function clearTestEmailLogs(): void {
 /**
  * Obtém estatísticas de emails de teste
  */
-export function getTestEmailStats() {
-  const logs = getTestEmailLogs()
+export async function getTestEmailStats() {
+  const logs = await getTestEmailLogs()
   const uniqueRecipients = new Set<string>()
   
   logs.forEach(log => {
