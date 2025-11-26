@@ -31,16 +31,23 @@ export async function sendEmail(
   }
 
   try {
-    // Dynamic import para evitar erro se o pacote não estiver instalado
-    // Usar string dinâmica para evitar que o bundler tente resolver em tempo de build
-    const nodemailerModule = await import(/* webpackIgnore: true */ 'nodemailer' as any).catch(() => null)
-    if (!nodemailerModule) {
-      return {
-        success: false,
-        error: 'Pacote "nodemailer" não instalado. Execute: npm install nodemailer'
+    // Dynamic import com tratamento de erro silencioso
+    let nodemailer: any
+    try {
+      const nodemailerModule = await import('nodemailer')
+      nodemailer = nodemailerModule.default || nodemailerModule
+      if (!nodemailer) {
+        throw new Error('Nodemailer não encontrado no módulo')
       }
+    } catch (importError: any) {
+      if (importError.code === 'MODULE_NOT_FOUND' || importError.message?.includes('Cannot find module')) {
+        return {
+          success: false,
+          error: 'Pacote "nodemailer" não instalado. Execute: npm install nodemailer'
+        }
+      }
+      throw importError
     }
-    const nodemailer = nodemailerModule.default || nodemailerModule
     
     const transporter = nodemailer.default.createTransport({
       host: config.host,

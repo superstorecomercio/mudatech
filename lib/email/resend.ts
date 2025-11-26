@@ -26,16 +26,23 @@ export async function sendEmail(
   }
 
   try {
-    // Dynamic import para evitar erro se o pacote não estiver instalado
-    // Usar string dinâmica para evitar que o bundler tente resolver em tempo de build
-    const resendModule = await import(/* webpackIgnore: true */ 'resend' as any).catch(() => null)
-    if (!resendModule) {
-      return {
-        success: false,
-        error: 'Pacote "resend" não instalado. Execute: npm install resend'
+    // Dynamic import com tratamento de erro silencioso
+    let Resend: any
+    try {
+      const resendModule = await import('resend')
+      Resend = resendModule.Resend || (resendModule as any).default?.Resend || (resendModule as any).default
+      if (!Resend) {
+        throw new Error('Resend não encontrado no módulo')
       }
+    } catch (importError: any) {
+      if (importError.code === 'MODULE_NOT_FOUND' || importError.message?.includes('Cannot find module')) {
+        return {
+          success: false,
+          error: 'Pacote "resend" não instalado. Execute: npm install resend'
+        }
+      }
+      throw importError
     }
-    const { Resend } = resendModule
     
     const resend = new Resend(config.apiKey)
 

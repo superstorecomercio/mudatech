@@ -26,16 +26,23 @@ export async function sendEmail(
   }
 
   try {
-    // Dynamic import para evitar erro se o pacote não estiver instalado
-    // Usar string dinâmica para evitar que o bundler tente resolver em tempo de build
-    const sgMailModule = await import(/* webpackIgnore: true */ '@sendgrid/mail' as any).catch(() => null)
-    if (!sgMailModule) {
-      return {
-        success: false,
-        error: 'Pacote "@sendgrid/mail" não instalado. Execute: npm install @sendgrid/mail'
+    // Dynamic import com tratamento de erro silencioso
+    let sgMail: any
+    try {
+      const sgMailModule = await import('@sendgrid/mail')
+      sgMail = sgMailModule.default || sgMailModule
+      if (!sgMail) {
+        throw new Error('SendGrid não encontrado no módulo')
       }
+    } catch (importError: any) {
+      if (importError.code === 'MODULE_NOT_FOUND' || importError.message?.includes('Cannot find module')) {
+        return {
+          success: false,
+          error: 'Pacote "@sendgrid/mail" não instalado. Execute: npm install @sendgrid/mail'
+        }
+      }
+      throw importError
     }
-    const sgMail = sgMailModule.default || sgMailModule
     
     sgMail.default.setApiKey(config.apiKey)
 
