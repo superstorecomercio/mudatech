@@ -62,19 +62,21 @@ export async function GET(request: NextRequest) {
     }) || []
 
     // Mapear todas as campanhas ativas com informações detalhadas
-    const todasCampanhasDetalhadas = campanhas?.map(c => {
+    const todasCampanhasDetalhadas = campanhas?.map((c: any) => {
       const dataFim = c.data_fim ? c.data_fim.split('T')[0] : null
       const venceHoje = dataFim === hojeSPStr
       const venceAmanha = dataFim === amanhaSPStr
-      const temEmail = !!(c.hotsite?.email && c.hotsite.email.trim() !== '')
+      // hotsite pode ser um objeto ou array, tratar ambos os casos
+      const hotsite = Array.isArray(c.hotsite) ? c.hotsite[0] : c.hotsite
+      const temEmail = !!(hotsite?.email && hotsite.email.trim() !== '')
       
       return {
         campanha_id: c.id,
         data_fim: c.data_fim,
         data_fim_formatada: dataFim,
         ativo: c.ativo,
-        hotsite_email: c.hotsite?.email || null,
-        hotsite_nome: c.hotsite?.nome_exibicao || null,
+        hotsite_email: hotsite?.email || null,
+        hotsite_nome: hotsite?.nome_exibicao || null,
         tem_email_preenchido: temEmail,
         vence_hoje: venceHoje,
         vence_amanha: venceAmanha,
@@ -93,9 +95,10 @@ export async function GET(request: NextRequest) {
       .limit(50)
 
     // Verificar quais campanhas têm email preenchido
-    const campanhasComEmail = campanhasVencendo.filter(c => 
-      c.hotsite && c.hotsite.email && c.hotsite.email.trim() !== ''
-    )
+    const campanhasComEmail = campanhasVencendo.filter((c: any) => {
+      const hotsite = Array.isArray(c.hotsite) ? c.hotsite[0] : c.hotsite
+      return hotsite && hotsite.email && hotsite.email.trim() !== ''
+    })
 
     // Verificar quais campanhas já têm email criado hoje
     const campanhasComEmailCriado = campanhasVencendo.filter(c => {
@@ -121,15 +124,18 @@ export async function GET(request: NextRequest) {
         campanhas_que_deveriam_ir_para_fila: campanhasComEmail.length - campanhasComEmailCriado.length
       },
       todas_campanhas_ativas: todasCampanhasDetalhadas,
-      campanhas_vencendo: campanhasVencendo.map(c => ({
-        campanha_id: c.id,
-        data_fim: c.data_fim,
-        ativo: c.ativo,
-        hotsite_email: c.hotsite?.email || null,
-        hotsite_nome: c.hotsite?.nome_exibicao || null,
-        tem_email_preenchido: !!(c.hotsite?.email && c.hotsite.email.trim() !== ''),
-        ja_tem_email_criado: campanhasComEmailCriado.some(cc => cc.id === c.id)
-      })),
+      campanhas_vencendo: campanhasVencendo.map((c: any) => {
+        const hotsite = Array.isArray(c.hotsite) ? c.hotsite[0] : c.hotsite
+        return {
+          campanha_id: c.id,
+          data_fim: c.data_fim,
+          ativo: c.ativo,
+          hotsite_email: hotsite?.email || null,
+          hotsite_nome: hotsite?.nome_exibicao || null,
+          tem_email_preenchido: !!(hotsite?.email && hotsite.email.trim() !== ''),
+          ja_tem_email_criado: campanhasComEmailCriado.some((cc: any) => cc.id === c.id)
+        }
+      }),
       emails_existentes: emailsExistentes?.map(e => ({
         campanha_id: e.campanha_id,
         tipo_email: e.tipo_email,
