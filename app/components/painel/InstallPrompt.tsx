@@ -112,7 +112,8 @@ export function InstallPrompt() {
         setShowPrompt(true)
       }
     } else {
-      // iOS ou outros - mostrar instruções
+      // Se não tiver deferredPrompt, mostrar instruções
+      console.log("[PWA] deferredPrompt não disponível, mostrando instruções")
       setShowPrompt(true)
     }
   }
@@ -179,33 +180,47 @@ export function InstallPrompt() {
                     Instalar Aplicativo Agora
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
-                    Toque no botão acima para instalar o app no seu dispositivo
+                    Toque no botão acima para abrir o prompt de instalação do navegador
                   </p>
                 </>
               ) : (
                 <div className="space-y-3">
-                  {isIOS ? (
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p className="font-medium">Instruções para iOS:</p>
-                      <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Toque no botão de compartilhar (⬆️) na barra inferior do Safari</li>
-                        <li>Role para baixo e selecione "Adicionar à Tela de Início"</li>
-                        <li>Confirme o nome e toque em "Adicionar"</li>
-                      </ol>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p className="font-medium">Instruções para Android:</p>
-                      <ol className="list-decimal list-inside space-y-1 ml-2">
-                        <li>Toque no menu do navegador (três pontos ⋮)</li>
-                        <li>Selecione "Instalar app" ou "Adicionar à tela inicial"</li>
-                        <li>Confirme a instalação</li>
-                      </ol>
-                      <p className="mt-2 text-xs">
-                        Se o botão não aparecer, o app pode já estar instalado ou seu navegador não suporta instalação.
-                      </p>
-                    </div>
-                  )}
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                      📱 Como instalar o app:
+                    </p>
+                    {isIOS ? (
+                      <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                        <ol className="list-decimal list-inside space-y-1.5 ml-1">
+                          <li>Toque no botão de <strong>compartilhar</strong> (⬆️) na barra inferior do Safari</li>
+                          <li>Role para baixo e encontre <strong>"Adicionar à Tela de Início"</strong></li>
+                          <li>Toque e confirme o nome do app</li>
+                          <li>Toque em <strong>"Adicionar"</strong> no canto superior direito</li>
+                        </ol>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                        <ol className="list-decimal list-inside space-y-1.5 ml-1">
+                          <li>Toque no <strong>menu do navegador</strong> (três pontos ⋮) no canto superior direito</li>
+                          <li>Procure por <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong></li>
+                          <li>Toque na opção e confirme a instalação</li>
+                        </ol>
+                        <p className="mt-2 text-xs italic">
+                          💡 Dica: Se não aparecer a opção, tente recarregar a página ou verifique se o app já está instalado.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      // Tentar novamente capturar o evento
+                      window.location.reload()
+                    }}
+                    variant="outline" 
+                    className="w-full gap-2"
+                  >
+                    Recarregar Página
+                  </Button>
                 </div>
               )}
             </CardContent>
