@@ -1,8 +1,8 @@
-const CACHE_NAME = "mudatech-painel-v1"
+const CACHE_NAME = "mudatech-painel-v2"
 const urlsToCache = [
   "/painel/dashboard",
   "/painel/login",
-  "/app/globals.css"
+  "/painel/manifest.json"
 ]
 
 // Instalar Service Worker e cachear recursos

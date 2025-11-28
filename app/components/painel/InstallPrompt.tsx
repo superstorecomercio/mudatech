@@ -27,63 +27,104 @@ export function InstallPrompt() {
 
     // Se já está instalado, não mostrar
     if (standalone) {
-      console.log("[PWA] App já está instalado")
+      console.log("[PWA] ✅ App já está instalado")
       return
     }
 
-    // Registrar Service Worker PRIMEIRO (necessário para PWA)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/painel/sw.js")
-        .then((registration) => {
-          console.log("[SW] Registrado com sucesso:", registration.scope)
-          // Aguardar um pouco para o SW estar ativo
-          return registration.update()
-        })
-        .catch((error) => {
-          console.error("[SW] Falha ao registrar:", error)
-        })
+    // Verificar requisitos PWA
+    const checkPWARequirements = async () => {
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+      console.log("[PWA] 🔍 Verificando requisitos para instalação...")
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+      
+      const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const hasServiceWorker = 'serviceWorker' in navigator
+      
+      console.log("[PWA] ✅ HTTPS/Localhost:", isHTTPS)
+      console.log("[PWA] ✅ Service Worker suportado:", hasServiceWorker)
+      
+      // Verificar se manifest está acessível
+      try {
+        const manifestResponse = await fetch('/painel/manifest.json')
+        if (manifestResponse.ok) {
+          const manifest = await manifestResponse.json()
+          console.log("[PWA] ✅ Manifest encontrado:", manifest.name)
+          console.log("[PWA]    Start URL:", manifest.start_url)
+          console.log("[PWA]    Display:", manifest.display)
+          console.log("[PWA]    Ícones:", manifest.icons?.length || 0, "ícones definidos")
+        } else {
+          console.error("[PWA] ❌ Manifest não encontrado (status:", manifestResponse.status, ")")
+        }
+      } catch (error) {
+        console.error("[PWA] ❌ Erro ao verificar manifest:", error)
+      }
+      
+      // Verificar Service Worker registrado
+      if (hasServiceWorker) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration('/painel/')
+          if (registration) {
+            console.log("[PWA] ✅ Service Worker registrado:", registration.scope)
+            console.log("[PWA]    Estado:", registration.active ? "Ativo" : "Inativo")
+          } else {
+            console.warn("[PWA] ⚠️ Service Worker ainda não registrado (aguardando...)")
+          }
+        } catch (error) {
+          console.error("[PWA] ❌ Erro ao verificar Service Worker:", error)
+        }
+      }
+      
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+      console.log("[PWA] ⏳ Aguardando evento 'beforeinstallprompt'...")
+      console.log("[PWA]    Este evento é disparado pelo navegador quando")
+      console.log("[PWA]    todos os requisitos PWA estão atendidos.")
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
+
+    // Aguardar um pouco antes de verificar (para dar tempo do SW registrar)
+    setTimeout(() => {
+      checkPWARequirements()
+    }, 1000)
 
     // Capturar evento de instalação (Android/Chrome)
     const handler = (e: Event) => {
       e.preventDefault()
       const promptEvent = e as BeforeInstallPromptEvent
       setDeferredPrompt(promptEvent)
-      console.log("[PWA] ✅ Evento beforeinstallprompt capturado - pronto para instalar!")
+      console.log("[PWA] ✅✅✅ Evento beforeinstallprompt capturado!")
+      console.log("[PWA] 🎯 PWA está pronto para instalação automática!")
 
       // Verificar se já instalou antes
       const hasInstalled = localStorage.getItem("pwa-installed")
       const hasDismissed = localStorage.getItem("pwa-dismissed")
 
       if (!hasInstalled && !hasDismissed) {
-        // Mostrar prompt após 2 segundos
-        setTimeout(() => setShowPrompt(true), 2000)
+        // Mostrar botão de instalação automaticamente após 2 segundos
+        // Mas não mostrar modal - apenas o botão que instala direto
+        console.log("[PWA] 📱 Botão de instalação será exibido automaticamente")
       } else {
         // Mesmo se já tiver sido dispensado, mostrar botão manual
-        setShowPrompt(true)
+        console.log("[PWA] 📱 Botão de instalação disponível (já foi dispensado antes)")
       }
     }
 
     window.addEventListener("beforeinstallprompt", handler)
     
     // Log para debug
-    console.log("[PWA] Aguardando evento beforeinstallprompt...")
-    console.log("[PWA] HTTPS:", window.location.protocol === 'https:')
-    console.log("[PWA] Localhost:", window.location.hostname === 'localhost')
+    console.log("[PWA] ⏳ Aguardando evento beforeinstallprompt...")
 
     // Detectar se foi instalado
     window.addEventListener("appinstalled", () => {
-      console.log("[PWA] ✅ App instalado com sucesso!")
+      console.log("[PWA] 🎉 App instalado com sucesso!")
       localStorage.setItem("pwa-installed", "true")
       setShowPrompt(false)
       setIsStandalone(true)
     })
 
     // Para iOS ou se não tiver o evento após 3 segundos, mostrar botão manual
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (!deferredPrompt) {
-        console.log("[PWA] ⚠️ Evento beforeinstallprompt não foi disparado")
+        console.log("[PWA] ⚠️ Evento beforeinstallprompt não foi disparado após 3s")
         const hasDismissed = localStorage.getItem("pwa-dismissed")
         if (!hasDismissed && !standalone) {
           setShowPrompt(true)
@@ -93,33 +134,36 @@ export function InstallPrompt() {
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler)
+      clearTimeout(timeoutId)
     }
   }, [])
 
   const handleInstall = async () => {
-    console.log("[PWA] Botão de instalação clicado")
+    console.log("[PWA] 🚀 Botão de instalação clicado")
     console.log("[PWA] deferredPrompt disponível:", !!deferredPrompt)
     
     // Android/Chrome - usar prompt nativo
     if (deferredPrompt) {
       try {
-        console.log("[PWA] Chamando prompt nativo...")
-        // Mostrar o prompt nativo do navegador
+        console.log("[PWA] 📱 Chamando prompt nativo do navegador...")
+        // Mostrar o prompt nativo do navegador IMEDIATAMENTE
         await deferredPrompt.prompt()
+        console.log("[PWA] ⏳ Aguardando resposta do usuário...")
+        
         const { outcome } = await deferredPrompt.userChoice
 
-        console.log("[PWA] Resultado do prompt:", outcome)
+        console.log("[PWA] 📊 Resultado do prompt:", outcome)
 
         if (outcome === "accepted") {
           localStorage.setItem("pwa-installed", "true")
           setShowPrompt(false)
-          console.log("[PWA] ✅ Usuário aceitou a instalação")
-          // O evento 'appinstalled' será disparado automaticamente
+          setDeferredPrompt(null)
+          console.log("[PWA] ✅✅✅ Usuário aceitou a instalação! O app será instalado agora.")
+          // O evento 'appinstalled' será disparado automaticamente quando a instalação completar
         } else {
           console.log("[PWA] ❌ Usuário rejeitou a instalação")
+          setDeferredPrompt(null)
         }
-
-        setDeferredPrompt(null)
       } catch (error) {
         console.error("[PWA] ❌ Erro ao mostrar prompt:", error)
         // Se falhar, mostrar instruções manuais
@@ -145,18 +189,25 @@ export function InstallPrompt() {
   // Mostrar botão sempre visível no header ou card flutuante
   return (
     <>
-      {/* Botão fixo no canto superior direito - sempre visível */}
-      {!isStandalone && (
+      {/* Botão fixo no canto superior direito - sempre visível quando PWA está pronto */}
+      {!isStandalone && deferredPrompt && (
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleInstall}
+          className="fixed top-4 right-4 z-50 gap-2 shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse"
+        >
+          <Download className="h-4 w-4" />
+          Instalar Agora
+        </Button>
+      )}
+
+      {/* Botão alternativo se não tiver deferredPrompt ainda */}
+      {!isStandalone && !deferredPrompt && (
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            if (deferredPrompt) {
-              handleInstall()
-            } else {
-              setShowPrompt(true)
-            }
-          }}
+          onClick={() => setShowPrompt(true)}
           className="fixed top-4 right-4 z-50 gap-2 shadow-lg bg-background/95 backdrop-blur-sm"
         >
           <Download className="h-4 w-4" />
