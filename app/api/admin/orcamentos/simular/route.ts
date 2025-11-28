@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
       dataEstimada: body.dataEstimada || '2026-01-15', // Data no formato YYYY-MM-DD
       origemFormulario: 'simulacao_admin',
       userAgent: 'Admin Simulator',
-      ipCliente: null,
+      ipCliente: undefined, // Não usar null, apenas undefined ou string
       // Campos adicionais que podem ser necessários
-      enderecoOrigem: body.enderecoOrigem || null,
-      enderecoDestino: body.enderecoDestino || null
+      enderecoOrigem: body.enderecoOrigem || undefined,
+      enderecoDestino: body.enderecoDestino || undefined
     }
 
     console.log('🧪 [Simulação] Criando orçamento de teste:', dadosOrcamento)
