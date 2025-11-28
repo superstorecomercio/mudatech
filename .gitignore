@@ -57,4 +57,4 @@ nul
 # Painel subproject (subprojeto separado, não deve ser processado pelo Next.js principal)
 # Nota: app/painel/ agora está integrado ao projeto principal, então não deve ser ignorado
 app/_painel/
-painel/
+/painel/
