@@ -55,6 +55,6 @@ nul
 *.log
 
 # Painel subproject (subprojeto separado, não deve ser processado pelo Next.js principal)
-app/painel/
+# Nota: app/painel/ agora está integrado ao projeto principal, então não deve ser ignorado
 app/_painel/
 painel/
