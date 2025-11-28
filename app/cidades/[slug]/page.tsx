@@ -1,13 +1,12 @@
 import { notFound } from 'next/navigation';
-import { getCidadeBySlug, getHotsitesByCidadeSlug, getHotsitesCountByTipo } from '../../../lib/db/queries';
+import { getCidadeBySlug, getHotsitesByCidadeSlug } from '../../../lib/db/queries';
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
-import { Input } from "@/app/components/ui/input";
-import { Star, Shield, Phone, MapPin, Search, SlidersHorizontal, CheckCircle2 } from "lucide-react";
+import { Star, Shield, Phone, MapPin, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from 'next';
 
 interface CityPageProps {
   params: Promise<{
@@ -19,147 +18,136 @@ interface CityPageProps {
 function getValidImageUrl(url: string | null | undefined, fallback: string = '/placeholder-logo.svg'): string {
   if (!url || url.trim() === '') return fallback;
   
-  // Check if it's a valid URL
   try {
     new URL(url);
     return url;
   } catch {
-    // If it starts with /, it's a relative path, which is valid
     if (url.startsWith('/')) return url;
     return fallback;
   }
+}
+
+export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const city = await getCidadeBySlug(slug);
+  
+  if (!city) {
+    return {
+      title: 'Cidade não encontrada',
+    };
+  }
+
+  return {
+    title: `Mudanças em ${city.name} - ${city.state} | Empresas de Mudança | MudaTech`,
+    description: `Encontre as melhores empresas de mudança em ${city.name}, ${city.state}. Compare preços, serviços e solicite orçamentos gratuitos. ${city.empresaCount || 0} empresas verificadas disponíveis.`,
+    keywords: `mudanças em ${city.name}, empresas de mudança ${city.name}, mudança ${city.name} ${city.state}, mudanças ${city.name}, mudança residencial ${city.name}, mudança comercial ${city.name}`,
+    openGraph: {
+      title: `Mudanças em ${city.name} - ${city.state} | MudaTech`,
+      description: `Encontre as melhores empresas de mudança em ${city.name}, ${city.state}. Compare preços e solicite orçamentos gratuitos.`,
+      type: 'website',
+    },
+  };
 }
 
 const CityPage = async ({ params }: CityPageProps) => {
   const { slug } = await params;
   const city = await getCidadeBySlug(slug);
   const hotsites = await getHotsitesByCidadeSlug(slug);
-  const counts = await getHotsitesCountByTipo(slug);
 
   if (!city) {
     notFound();
   }
 
-  // Mapear slug da cidade para imagem
-  const cityImages: Record<string, string> = {
-    'sao-paulo-sp': '/s-o-paulo-skyline.jpg',
-    'rio-de-janeiro-rj': '/rio-de-janeiro-christ.jpg',
-    'belo-horizonte-mg': '/belo-horizonte-cityscape.jpg',
-    'brasilia-df': '/brasilia-congress.jpg',
-    'curitiba-pr': '/curitiba-architecture.jpg',
-    'porto-alegre-rs': '/porto-alegre-downtown.jpg',
-  };
-
-  const cityImage = cityImages[slug] || '/placeholder.svg';
-
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Hero da Cidade */}
-      <section className="relative h-[300px] lg:h-[400px] overflow-hidden">
-        <Image
-          src={cityImage}
-          alt={`${city.name}, ${city.state}`}
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-3xl text-white space-y-4">
-              <div className="flex items-center gap-3 mb-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <section className="bg-gradient-animated py-8 md:py-12">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center text-white">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <MapPin className="w-6 h-6" />
-                <span className="text-xl font-medium">{city.state}</span>
               </div>
-              <h1 className="text-4xl lg:text-6xl font-bold text-balance">
-                Empresas de Mudança em {city.name}
-              </h1>
-              <p className="text-lg lg:text-xl text-white/90 leading-relaxed">
-                {hotsites.length > 0 
-                  ? `${hotsites.length} empresa${hotsites.length > 1 ? 's' : ''} verificada${hotsites.length > 1 ? 's' : ''} na sua região`
-                  : 'Encontre as melhores empresas de mudança'}
-              </p>
-              <div className="flex items-center gap-4 pt-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-accent" />
-                  <span className="text-sm">Todas verificadas</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  <span className="text-sm">Avaliações reais</span>
-                </div>
+              <span className="text-xl font-semibold">{city.state}</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+              Mudanças em {city.name}
+            </h1>
+            <p className="text-lg md:text-xl text-white/95 leading-relaxed mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+              Encontre as melhores opções de mudança residencial e comercial em {city.name}, {city.state}. Compare preços e solicite orçamentos gratuitos.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <CheckCircle2 className="w-5 h-5 text-green-300" />
+                <span className="text-sm font-medium">
+                  {hotsites.length > 0 ? `${hotsites.length} empresa${hotsites.length > 1 ? 's' : ''} verificada${hotsites.length > 1 ? 's' : ''}` : 'Empresas verificadas'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+                <span className="text-sm font-medium">Avaliações reais</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <Shield className="w-5 h-5 text-blue-300" />
+                <span className="text-sm font-medium">100% confiável</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Filtros e Busca */}
-      <section className="border-b bg-white sticky top-16 z-30 shadow-sm">
-        <div className="container mx-auto px-4 lg:px-8 py-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
-            {/* Busca */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou serviço..."
-                className="pl-10 h-12 rounded-xl border-2 focus:border-primary"
-              />
-            </div>
-
-            {/* Filtro de Tipo */}
-            <Select defaultValue="todos">
-              <SelectTrigger className="w-full lg:w-[220px] h-12 rounded-xl border-2">
-                <SelectValue placeholder="Tipo de serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos ({counts.mudanca + counts.carreto + counts.guardamoveis})</SelectItem>
-                <SelectItem value="Empresa de Mudança">
-                  Empresas de Mudanças ({counts.mudanca})
-                </SelectItem>
-                <SelectItem value="Carretos">Carretos ({counts.carreto})</SelectItem>
-                <SelectItem value="Guarda-Móveis">Guarda-Móveis ({counts.guardamoveis})</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Filtro de Ordenação */}
-            <Select defaultValue="plano">
-              <SelectTrigger className="w-full lg:w-[220px] h-12 rounded-xl border-2">
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="plano">Destaque</SelectItem>
-                <SelectItem value="nome">Nome A-Z</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* WhatsApp CTA Section */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+              Calcule o preço da sua mudança em {city.name}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Receba orçamentos gratuitos e compare preços em 60 segundos pelo WhatsApp
+            </p>
+            <a
+              href="https://wa.me/15551842523?text=Ol%C3%A1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block"
+            >
+              <button
+                className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white text-lg md:text-xl px-8 md:px-12 py-4 md:py-5 rounded-2xl shadow-[0_15px_50px_rgba(37,211,102,0.5)] hover:shadow-[0_20px_60px_rgba(37,211,102,0.7)] hover:scale-110 transition-all duration-300 font-extrabold"
+              >
+                💬 Calcular no WhatsApp Grátis
+              </button>
+            </a>
           </div>
         </div>
       </section>
 
       {/* Lista de Empresas */}
-      <section className="py-12 lg:py-20 bg-gradient-to-b from-white to-muted/20 flex-1">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                {hotsites.length} empresa{hotsites.length !== 1 ? 's' : ''} encontrada{hotsites.length !== 1 ? 's' : ''}
-              </h2>
-              <p className="text-muted-foreground">Compare serviços e solicite orçamentos</p>
-            </div>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Transportadoras e Empresas de Mudança em {city.name}
+            </h2>
+            <p className="text-gray-600">
+              {hotsites.length > 0 
+                ? `${hotsites.length} empresa${hotsites.length > 1 ? 's' : ''} verificada${hotsites.length > 1 ? 's' : ''} disponível${hotsites.length > 1 ? 'eis' : ''} em ${city.name}`
+                : `Encontre as melhores opções de mudança residencial e comercial em ${city.name}`
+              }
+            </p>
           </div>
 
-          {/* Grid de Empresas */}
           {hotsites.length > 0 ? (
             <div className="space-y-6">
               {hotsites.map((hotsite) => (
                 <Card
                   key={hotsite.id}
-                  className="p-6 lg:p-8 border-0 shadow-lg hover:shadow-2xl transition-all duration-300"
+                  className="p-6 lg:p-8 bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300"
                 >
                   <div className="flex flex-col lg:flex-row gap-6">
                     {/* Logo e Info Principal */}
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-[133px] h-[100px] rounded-2xl overflow-hidden bg-muted flex-shrink-0 relative">
+                      <div className="w-[133px] h-[100px] rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
                         <Image
                           src={getValidImageUrl(hotsite.logoUrl)}
                           alt={hotsite.nomeExibicao || 'Logo da empresa'}
@@ -171,7 +159,7 @@ const CityPage = async ({ params }: CityPageProps) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-xl font-bold text-foreground mb-2">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-3">
                               {hotsite.nomeExibicao}
                             </h3>
                             <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -180,116 +168,94 @@ const CityPage = async ({ params }: CityPageProps) => {
                                   variant={hotsite.plano.nome === 'Premium' ? 'default' : 'outline'}
                                   className={
                                     hotsite.plano.nome === 'Premium' 
-                                      ? 'bg-primary text-primary-foreground' 
-                                      : 'border-primary/20'
+                                      ? 'bg-[#667eea] text-white' 
+                                      : 'border-[#667eea]/20'
                                   }
                                 >
                                   {hotsite.plano.nome}
                                 </Badge>
                               )}
                               {hotsite.verificado && (
-                                <Badge variant="secondary" className="bg-accent/10 text-accent border-0">
+                                <Badge variant="secondary" className="bg-green-100 text-green-800 border-0">
                                   <Shield className="w-3 h-3 mr-1" />
                                   Verificada
                                 </Badge>
                               )}
                               {hotsite.tipoempresa && (
-                                <Badge variant="outline" className="border-muted">
+                                <Badge variant="outline" className="border-gray-300">
                                   {hotsite.tipoempresa}
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-3">
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
                               {hotsite.cidade && hotsite.estado && (
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" />
+                                <span className="flex items-center gap-2">
+                                  <MapPin className="w-4 h-4" />
                                   {hotsite.cidade}/{hotsite.estado}
                                 </span>
                               )}
                               {hotsite.telefone1 && (
-                                <span className="flex items-center gap-1">
-                                  <Phone className="w-3 h-3" />
+                                <span className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4" />
                                   {hotsite.telefone1}
                                 </span>
                               )}
                             </div>
 
-                            {/* Descrição da Empresa */}
+                            {/* Descrição */}
                             {hotsite.descricao && (
-                              <div className="mb-4">
-                                <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">
-                                  {hotsite.descricao}
-                                </p>
+                              <p className="text-gray-700 leading-relaxed line-clamp-2 mb-4">
+                                {hotsite.descricao}
+                              </p>
+                            )}
+
+                            {/* Serviços */}
+                            {hotsite.servicos && hotsite.servicos.length > 0 && (
+                              <div className="grid sm:grid-cols-2 gap-2">
+                                {hotsite.servicos.slice(0, 4).map((servico, idx) => (
+                                  <div key={idx} className="flex items-center gap-2 text-sm">
+                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    <span className="text-gray-700">{servico}</span>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
                         </div>
-
-                        {/* Serviços */}
-                        {hotsite.servicos && hotsite.servicos.length > 0 && (
-                          <div className="grid sm:grid-cols-2 gap-2 mb-4">
-                            {hotsite.servicos.slice(0, 4).map((servico, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-sm">
-                                <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                                <span className="text-muted-foreground">{servico}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Destaques */}
-                        {hotsite.highlights && hotsite.highlights.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {hotsite.highlights.slice(0, 3).map((highlight, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {highlight}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
 
                     {/* Ações */}
-                    <div className="lg:w-64 flex flex-col justify-between gap-4">
-                      <div className="space-y-3">
-                        <Link href={`/orcamento?empresa=${hotsite.nomeExibicao}&cidade=${slug}`}>
-                          <Button size="lg" className="w-full rounded-xl font-semibold text-base">
-                            Solicitar Orçamento
-                          </Button>
-                        </Link>
-                        {hotsite.telefone1 && (
-                          <a href={`tel:${hotsite.telefone1.replace(/\D/g, '')}`}>
-                            <Button 
-                              variant="outline" 
-                              size="lg" 
-                              className="w-full rounded-xl bg-transparent font-semibold"
-                            >
-                              <Phone className="w-4 h-4 mr-2" />
-                              Ligar Agora
-                            </Button>
-                          </a>
-                        )}
-                      </div>
+                    <div className="lg:w-64 flex flex-col justify-center">
+                      <a
+                        href="https://wa.me/15551842523?text=Ol%C3%A1"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full"
+                      >
+                        <Button size="lg" className="w-full rounded-xl font-semibold text-base bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:from-[#764ba2] hover:to-[#667eea]">
+                          Solicitar Orçamento
+                        </Button>
+                      </a>
                     </div>
                   </div>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-20">
-              <div className="max-w-md mx-auto space-y-4">
-                <div className="w-20 h-20 mx-auto bg-muted rounded-full flex items-center justify-center">
-                  <MapPin className="w-10 h-10 text-muted-foreground" />
+            <div className="text-center py-20 bg-white rounded-2xl shadow-lg">
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                  <MapPin className="w-10 h-10 text-gray-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground">
-                  Nenhuma empresa encontrada
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Nenhuma empresa encontrada em {city.name}
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Ainda não temos empresas cadastradas nesta cidade, mas você pode solicitar orçamentos gerais.
                 </p>
                 <Link href="/orcamento">
-                  <Button size="lg" className="rounded-full font-semibold px-8 mt-4">
+                  <Button size="lg" className="rounded-xl font-semibold px-8 bg-gradient-to-r from-[#667eea] to-[#764ba2]">
                     Solicitar Orçamento Geral
                   </Button>
                 </Link>
@@ -299,20 +265,102 @@ const CityPage = async ({ params }: CityPageProps) => {
 
           {/* CTA Final */}
           {hotsites.length > 0 && (
-            <div className="mt-16 text-center p-12 bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl border border-primary/10">
-              <h3 className="text-2xl lg:text-3xl font-bold text-foreground mb-4 text-balance">
+            <div className="mt-16 text-center p-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-2xl shadow-2xl text-white">
+              <h3 className="text-3xl font-bold mb-4">
                 Não encontrou o que procurava?
               </h3>
-              <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Preencha nosso formulário e receba até 4 orçamentos personalizados de empresas verificadas
+              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Preencha nosso formulário e receba até 4 orçamentos personalizados de empresas verificadas em {city.name}
               </p>
               <Link href="/orcamento">
-                <Button size="lg" className="rounded-full font-semibold px-8 text-base">
+                <Button size="lg" className="rounded-xl font-semibold px-8 text-base bg-white text-[#667eea] hover:bg-gray-100">
                   Solicitar Orçamentos Grátis
                 </Button>
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* SEO Content Section - Cards Bonitos */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Card 1 */}
+            <Card className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-100 shadow-lg hover:shadow-xl transition-all">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Mudança Residencial e Comercial em {city.name}, {city.state}
+              </h2>
+              <div className="text-gray-700 space-y-3 leading-relaxed">
+                <p>
+                  Procurando <strong className="text-gray-900">mudança residencial em {city.name}</strong> ou <strong className="text-gray-900">mudança comercial em {city.name}</strong>? O MudaTech conecta você às melhores transportadoras e empresas especializadas em {city.name}, {city.state}, facilitando o processo de encontrar e comparar serviços de mudança na sua região.
+                </p>
+                <p>
+                  Nossa plataforma reúne empresas verificadas e confiáveis em {city.name}, oferecendo uma forma rápida e segura de encontrar a empresa ideal para sua mudança, seja ela residencial, comercial ou interestadual.
+                </p>
+              </div>
+            </Card>
+
+            {/* Card 2 */}
+            <Card className="p-8 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-100 shadow-lg hover:shadow-xl transition-all">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Por Que Escolher Serviços de Mudança em {city.name}?
+              </h3>
+              <div className="text-gray-700 space-y-3 leading-relaxed">
+                <p>
+                  Ao escolher <strong className="text-gray-900">mudança residencial em {city.name}</strong> ou <strong className="text-gray-900">mudança comercial em {city.name}</strong> através do MudaTech, você tem a garantia de trabalhar com empresas verificadas, que conhecem bem a região e possuem experiência comprovada em <strong className="text-gray-900">mudanças em {city.name}</strong>.
+                </p>
+                <p>
+                  Todas as transportadoras e empresas cadastradas em nossa plataforma em {city.name} possuem documentação válida, seguro de carga e equipe qualificada para garantir uma mudança tranquila e segura.
+                </p>
+              </div>
+            </Card>
+
+            {/* Card 3 - Full Width */}
+            <Card className="md:col-span-2 p-8 bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 shadow-lg hover:shadow-xl transition-all">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Tipos de Serviços de Mudança em {city.name}
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6 mt-6">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    Mudança Residencial
+                  </h4>
+                  <p className="text-gray-700 text-sm">
+                    Especializada em mudanças de casas e apartamentos em {city.name}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    Mudança Comercial
+                  </h4>
+                  <p className="text-gray-700 text-sm">
+                    Focada em mudanças de escritórios, lojas e estabelecimentos comerciais em {city.name}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    Mudança Interestadual
+                  </h4>
+                  <p className="text-gray-700 text-sm">
+                    Experientes em mudanças de longa distância partindo de {city.name}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    Mudança com Embalagem
+                  </h4>
+                  <p className="text-gray-700 text-sm">
+                    Oferecem serviço completo incluindo embalagem e montagem em {city.name}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </section>
     </div>

@@ -28,32 +28,38 @@ function normalizeForSearch(text: string): string {
  * Retorna cidades únicas com contagem de empresas que têm hotsites nelas
  */
 export const getCidades = async (): Promise<City[]> => {
-  const supabase = createServerClient();
-  
-  // Buscar empresas com campanhas ativas
-  const { data: empresasComCampanhasAtivas } = await supabase
-    .from('campanhas')
-    .select('empresa_id')
-    .eq('ativo', true);
-  
-  const empresaIdsAtivas = [...new Set(empresasComCampanhasAtivas?.map(c => c.empresa_id) || [])];
-  
-  if (empresaIdsAtivas.length === 0) {
-    return [];
-  }
-  
-  // Buscar hotsites de empresas com campanhas ativas
-  const { data: hotsites, error } = await supabase
-    .from('hotsites')
-    .select('cidade, estado, empresa_id')
-    .in('empresa_id', empresaIdsAtivas)
-    .not('cidade', 'is', null)
-    .not('estado', 'is', null);
+  try {
+    const supabase = createServerClient();
+    
+    // Buscar empresas com campanhas ativas
+    const { data: empresasComCampanhasAtivas, error: errorCampanhas } = await supabase
+      .from('campanhas')
+      .select('empresa_id')
+      .eq('ativo', true);
+    
+    if (errorCampanhas) {
+      console.error('Erro ao buscar campanhas ativas:', errorCampanhas);
+      return [];
+    }
+    
+    const empresaIdsAtivas = [...new Set(empresasComCampanhasAtivas?.map(c => c.empresa_id).filter(Boolean) || [])];
+    
+    if (empresaIdsAtivas.length === 0) {
+      return [];
+    }
+    
+    // Buscar hotsites de empresas com campanhas ativas
+    const { data: hotsites, error } = await supabase
+      .from('hotsites')
+      .select('cidade, estado, empresa_id')
+      .in('empresa_id', empresaIdsAtivas)
+      .not('cidade', 'is', null)
+      .not('estado', 'is', null);
 
-  if (error) {
-    console.error('Erro ao buscar cidades dos hotsites:', error);
-    throw error;
-  }
+    if (error) {
+      console.error('Erro ao buscar cidades dos hotsites:', error);
+      return [];
+    }
 
   // Agrupar por cidade + estado e contar empresas únicas
   const cidadesMap = new Map<string, { nome: string; estado: string; empresas: Set<string> }>();
@@ -74,27 +80,35 @@ export const getCidades = async (): Promise<City[]> => {
     cidadesMap.get(key)!.empresas.add(hotsite.empresa_id);
   });
 
-  // Converter para array e ordenar por quantidade de empresas (maior primeiro)
-  const cidades: City[] = Array.from(cidadesMap.values())
-    .map((cidade) => ({
-      id: generateSlug(`${cidade.nome}-${cidade.estado}`), // Usar slug como ID temporário
-      name: cidade.nome,
-      slug: generateSlug(`${cidade.nome}-${cidade.estado}`),
-      state: cidade.estado,
-      description: undefined,
-      region: undefined,
-      createdAt: undefined,
-      empresaCount: cidade.empresas.size, // Adicionar contagem
-    }))
-    .sort((a, b) => {
-      // Ordenar por quantidade de empresas (maior primeiro), depois por nome
-      if (b.empresaCount !== a.empresaCount) {
-        return b.empresaCount - a.empresaCount;
-      }
-      return a.name.localeCompare(b.name);
-    });
+    // Converter para array e ordenar por quantidade de empresas (maior primeiro)
+    const cidades: City[] = Array.from(cidadesMap.values())
+      .map((cidade) => ({
+        id: generateSlug(`${cidade.nome}-${cidade.estado}`), // Usar slug como ID temporário
+        name: cidade.nome,
+        slug: generateSlug(`${cidade.nome}-${cidade.estado}`),
+        state: cidade.estado,
+        description: undefined,
+        region: undefined,
+        createdAt: undefined,
+        empresaCount: cidade.empresas.size, // Adicionar contagem
+      }))
+      .sort((a, b) => {
+        // Ordenar por quantidade de empresas (maior primeiro), depois por nome
+        if (b.empresaCount !== a.empresaCount) {
+          return b.empresaCount - a.empresaCount;
+        }
+        return a.name.localeCompare(b.name);
+      });
 
-  return cidades;
+    return cidades;
+  } catch (err: any) {
+    console.error('Erro inesperado ao buscar cidades:', {
+      error: err,
+      message: err?.message,
+      stack: err?.stack,
+    });
+    return [];
+  }
 };
 
 /**

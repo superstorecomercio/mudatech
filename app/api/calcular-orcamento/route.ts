@@ -13,6 +13,7 @@ interface CalculoRequest {
   origem: string;
   destino: string;
   tipoImovel: TipoImovel;
+  metragem?: string; // 'ate_50' | '50_150' | '150_300' | 'acima_300'
   temElevador: 'sim' | 'nao';
   andar: number;
   precisaEmbalagem: 'sim' | 'nao';

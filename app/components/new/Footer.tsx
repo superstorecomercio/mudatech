@@ -54,27 +54,27 @@ export function Footer() {
             <h3 className="text-white font-extrabold mb-6 text-lg">Serviços</h3>
             <ul className="space-y-3">
               <li>
-                <Link href="#" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
+                <Link href="/mudanca-residencial" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
                   Mudança Residencial
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
+                <Link href="/mudanca-comercial" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
                   Mudança Comercial
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
+                <Link href="/mudanca-interestadual" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
                   Mudança Interestadual
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
+                <Link href="/guarda-moveis" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
                   Guarda-Móveis
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
+                <Link href="/embalagem-e-montagem" className="hover:text-[#667eea] transition-colors text-sm text-gray-400 hover:translate-x-1 inline-block transition-transform">
                   Embalagem e Montagem
                 </Link>
               </li>

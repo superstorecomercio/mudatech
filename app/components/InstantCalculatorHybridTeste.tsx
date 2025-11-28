@@ -11,14 +11,16 @@ import { cn } from "@/lib/utils"
 
 type EstadoCalculadora = "formularioInicial" | "preview" | "capturaContato" | "resultadoFinal"
 
-type TipoImovel = "kitnet" | "1_quarto" | "2_quartos" | "3_mais" | "comercial"
+type TipoImovel = "casa" | "apartamento" | "empresa"
+
+type Metragem = "ate_50" | "50_150" | "150_300" | "acima_300"
 
 interface FormData {
   origem: string
   destino: string
   tipoImovel: TipoImovel | ""
+  metragem: Metragem | ""
   temElevador: "sim" | "nao" | ""
-  andar: string
   precisaEmbalagem: "sim" | "nao" | ""
 }
 
@@ -50,22 +52,25 @@ interface Message {
 }
 
 const tiposImovelLabels: Record<TipoImovel, string> = {
-  kitnet: "Kitnet",
-  "1_quarto": "Apartamento 1 quarto",
-  "2_quartos": "Apartamento 2 quartos",
-  "3_mais": "Apartamento 3+ quartos ou Casa",
-  comercial: "Mudança Comercial"
+  casa: "Casa",
+  apartamento: "Apartamento",
+  empresa: "Empresa"
+}
+
+const metragemLabels: Record<Metragem, string> = {
+  ate_50: "Até 50 m²",
+  "50_150": "50 a 150 m²",
+  "150_300": "150 a 300 m²",
+  acima_300: "Acima de 300 m²"
 }
 
 const tiposImovelPorte: Record<TipoImovel, string> = {
-  kitnet: "pequeno",
-  "1_quarto": "pequeno a médio",
-  "2_quartos": "médio",
-  "3_mais": "grande",
-  comercial: "comercial"
+  casa: "médio a grande",
+  apartamento: "médio",
+  empresa: "comercial"
 }
 
-// Definir as etapas do formulário conversacional (MESMAS PERGUNTAS DA ORIGINAL)
+// Definir as etapas do formulário conversacional (MESMAS PERGUNTAS DO BOT WHATSAPP)
 const getEtapas = () => {
   return [
     {
@@ -84,15 +89,25 @@ const getEtapas = () => {
     },
     {
       id: "tipoImovel",
-      pergunta: "Qual o tipo do seu imóvel?",
+      pergunta: "Qual o tipo de imóvel na origem?",
       tipo: "select",
       icon: Home,
       opcoes: [
-        { valor: "kitnet", label: "Kitnet" },
-        { valor: "1_quarto", label: "Apartamento 1 quarto" },
-        { valor: "2_quartos", label: "Apartamento 2 quartos" },
-        { valor: "3_mais", label: "Apartamento 3+ quartos ou Casa" },
-        { valor: "comercial", label: "Mudança Comercial" }
+        { valor: "casa", label: "Casa" },
+        { valor: "apartamento", label: "Apartamento" },
+        { valor: "empresa", label: "Empresa" }
+      ]
+    },
+    {
+      id: "metragem",
+      pergunta: "Qual a metragem aproximada do imóvel na origem?",
+      tipo: "select",
+      icon: Building2,
+      opcoes: [
+        { valor: "ate_50", label: "Até 50 m²" },
+        { valor: "50_150", label: "50 a 150 m²" },
+        { valor: "150_300", label: "150 a 300 m²" },
+        { valor: "acima_300", label: "Acima de 300 m²" }
       ]
     },
     {
@@ -111,8 +126,8 @@ const getEtapas = () => {
       tipo: "select",
       icon: Building2,
       opcoes: [
-        { valor: "sim", label: "Sim, preciso de embalagem completa" },
-        { valor: "nao", label: "Não, eu mesmo embalo" }
+        { valor: "sim", label: "Sim, completa" },
+        { valor: "nao", label: "Não preciso" }
       ]
     }
   ]
@@ -171,8 +186,8 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
     origem: "",
     destino: "",
     tipoImovel: "",
+    metragem: "",
     temElevador: "",
-    andar: "1",
     precisaEmbalagem: ""
   })
 
@@ -486,6 +501,7 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       dados.origem.trim() !== "" &&
       dados.destino.trim() !== "" &&
       dados.tipoImovel !== "" &&
+      dados.metragem !== "" &&
       dados.temElevador !== "" &&
       dados.precisaEmbalagem !== ""
 
@@ -671,15 +687,20 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
     setMostrarPerguntaLista(false)
     setColetandoListaObjetos(false)
 
-    const andarNumero = parseInt(formData.andar) || 1
     const whatsappSemMascara = contatoData.whatsapp.replace(/\D/g, "")
+    
+    // Converter tipo de imóvel do formato do formulário para o formato da API
+    const tipoImovelApi = formData.tipoImovel === "casa" ? "3_mais" :
+                         formData.tipoImovel === "apartamento" ? "2_quartos" :
+                         formData.tipoImovel === "empresa" ? "comercial" : formData.tipoImovel
     
     const dadosParaEnvio = {
       origem: formData.origem.trim(),
       destino: formData.destino.trim(),
-      tipoImovel: formData.tipoImovel,
+      tipoImovel: tipoImovelApi,
+      metragem: formData.metragem,
       temElevador: formData.temElevador,
-      andar: andarNumero,
+      andar: 1, // Padrão, não é mais perguntado
       precisaEmbalagem: formData.precisaEmbalagem,
       nome: contatoData.nome.trim(),
       email: contatoData.email.trim(),
@@ -750,8 +771,8 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
       origem: "",
       destino: "",
       tipoImovel: "",
+      metragem: "",
       temElevador: "",
-      andar: "1",
       precisaEmbalagem: ""
     })
     setContatoData({
@@ -1463,13 +1484,19 @@ export function InstantCalculatorHybridTeste({ onEstadoChange }: InstantCalculat
                 </span>
               </div>
               <div className="flex justify-between">
+                <span className="text-muted-foreground">Metragem:</span>
+                <span className="font-medium text-foreground">
+                  {formData.metragem && metragemLabels[formData.metragem as Metragem]}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Elevador:</span>
                 <span className="font-medium text-foreground">{formData.temElevador === "sim" ? "Sim" : "Não"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Embalagem:</span>
                 <span className="font-medium text-foreground">
-                  {formData.precisaEmbalagem === "sim" ? "Sim, completa" : "Não precisa"}
+                  {formData.precisaEmbalagem === "sim" ? "Sim, completa" : "Não preciso"}
                 </span>
               </div>
               <div className="flex justify-between">

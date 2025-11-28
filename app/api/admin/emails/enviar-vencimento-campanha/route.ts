@@ -4,7 +4,6 @@ import { getEmailConfig } from '@/lib/email/config'
 import { processEmailTemplate } from '@/lib/email/template-service'
 import { importEmailService } from '@/lib/email/dynamic-import'
 import { isTestMode } from '@/lib/email/test-mode'
-import { formatDateOnlyBR } from '@/lib/utils/date'
 
 /**
  * Rota para enviar emails de aviso de vencimento de campanha que estão na fila
@@ -232,28 +231,18 @@ export async function POST(request: NextRequest) {
           : 'campanha_vencendo_1dia'
 
         // Preparar variáveis para o template
-        // Formatar data_fim corretamente (evitar problemas de timezone)
-        const dataFimFormatada = formatDateOnlyBR(campanha?.data_fim) || ''
-        
-        // Calcular dias restantes usando a data corretamente
-        let diasRestantes = 0
-        if (campanha?.data_fim) {
-          // Se data_fim está no formato YYYY-MM-DD, parsear como data local
-          const dataFimStr = campanha.data_fim.split('T')[0] // Remover hora se houver
-          const [ano, mes, dia] = dataFimStr.split('-').map(Number)
-          const dataFimLocal = new Date(ano, mes - 1, dia)
-          const hoje = new Date()
-          hoje.setHours(0, 0, 0, 0)
-          diasRestantes = Math.ceil((dataFimLocal.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-        }
+        const dataFim = campanha?.data_fim ? new Date(campanha.data_fim) : null
+        const diasRestantes = dataFim 
+          ? Math.ceil((dataFim.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          : 0
 
         // Buscar dados do plano
         const plano = (campanha as any)?.planos
         const nomePlano = plano?.nome || 'Sem plano'
-        // Usar o valor_mensal da campanha (valor cadastrado na campanha)
-        const valorCampanha = campanha?.valor_mensal || 0
-        const valorPlanoFormatado = valorCampanha > 0 
-          ? `R$ ${valorCampanha.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        // Usar o preço do plano, não o valor_mensal da campanha
+        const valorPlano = plano?.preco || 0
+        const valorPlanoFormatado = valorPlano > 0 
+          ? `R$ ${valorPlano.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           : 'Não informado'
 
         const variables = {
@@ -264,8 +253,8 @@ export async function POST(request: NextRequest) {
           nome_campanha: hotsite.nome_exibicao || 'Campanha',
           nome_plano: nomePlano,
           valor_plano: valorPlanoFormatado,
-          data_fim: dataFimFormatada,
-          data_vencimento: dataFimFormatada,
+          data_fim: dataFim ? dataFim.toLocaleDateString('pt-BR') : '',
+          data_vencimento: dataFim ? dataFim.toLocaleDateString('pt-BR') : '',
           dias_restantes: diasRestantes.toString()
         }
 

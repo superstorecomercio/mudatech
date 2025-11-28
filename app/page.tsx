@@ -281,7 +281,7 @@ export default function Home() {
           {/* Badge: Comparar e Receber Cotações */}
           <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-white/20 px-3 py-1.5 md:px-4 md:py-2 rounded-full mb-6 md:mb-8 animate-fade-in-up shadow-lg">
             <Building2 className="w-4 h-4 md:w-4 md:h-4 text-[#667eea]" />
-            <span className="text-sm md:text-sm font-medium text-gray-800">Compare preços e receba cotações de empresas verificadas</span>
+            <span className="text-sm md:text-sm font-medium text-gray-800">Compare preços e receba cotações de empresas de mudança verificadas</span>
           </div>
 
           {/* Rating */}
@@ -300,7 +300,7 @@ export default function Home() {
           </h1>
 
           <p className="text-lg md:text-3xl text-white/95 mb-8 md:mb-12 animate-fade-in-up animation-delay-300 text-balance font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
-            Descubra o valor real da sua mudança em 60 segundos pelo WhatsApp
+            Encontre as melhores empresas de mudança do Brasil. Compare preços e calcule o valor da sua mudança em 60 segundos pelo WhatsApp
           </p>
 
           {/* Trust Badges */}
@@ -344,19 +344,19 @@ export default function Home() {
       {/* How It Works */}
       <section id="como-funciona" className="bg-white/95 backdrop-blur-sm py-24 md:py-36">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Como Funciona</h2>
+          <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Como Encontrar Empresas de Mudança</h2>
           <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-5xl mx-auto">
             {[
-              { icon: "📱", title: "Clique no Botão", desc: "Em 2 segundos você já está conversando" },
+              { icon: "📱", title: "Clique no Botão", desc: "Em 2 segundos você já está conversando com nossa plataforma de empresas de mudança" },
               {
                 icon: "💬",
                 title: "Fale com Julia",
-                desc: "Nossa IA faz 10 perguntas rápidas sobre sua mudança",
+                desc: "Nossa IA faz 10 perguntas rápidas sobre sua mudança e encontra as melhores empresas de mudança para você",
               },
               {
                 icon: "💰",
                 title: "Receba Orçamento",
-                desc: "Preço real + contato de empresas verificadas",
+                desc: "Preço real + contato de empresas de mudança verificadas e confiáveis",
               },
             ].map((step, i) => (
               <Card
@@ -374,7 +374,7 @@ export default function Home() {
 
       {/* Benefits */}
       <section className="container mx-auto px-4 py-24 md:py-36">
-        <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Por Que Escolher o MudaTech?</h2>
+        <h2 className="text-4xl md:text-6xl font-extrabold text-center text-gray-900 mb-16 md:mb-20">Por Que Escolher o MudaTech para Encontrar Empresas de Mudança?</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
             {
@@ -387,7 +387,7 @@ export default function Home() {
               title: "Preço Realista",
               desc: "Baseado em centenas de mudanças reais já realizadas",
             },
-            { icon: Building2, title: "Empresas Verificadas", desc: "Até 10 transportadoras confiáveis e avaliadas" },
+            { icon: Building2, title: "Empresas de Mudança Verificadas", desc: "Até 10 empresas de mudança confiáveis e avaliadas" },
             { icon: Package, title: "Completo", desc: "Inclui embalagem, elevador e lista de objetos" },
             { icon: Zap, title: "Super Rápido", desc: "Resposta instantânea via WhatsApp" },
             { icon: Shield, title: "Seguro", desc: "Seus dados protegidos e empresas verificadas" },
@@ -428,10 +428,10 @@ export default function Home() {
               <span className="text-sm font-bold text-[#667eea]">Buscas Populares</span>
             </div>
             <h2 className="text-4xl lg:text-6xl font-extrabold text-gray-900">
-              Encontre Empresas nas Principais Cidades
+              Empresas de Mudança nas Principais Cidades do Brasil
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">
-              Acesse diretamente as empresas mais procuradas em cada cidade
+              Encontre empresas de mudança verificadas nas principais cidades brasileiras. Compare preços e serviços.
             </p>
           </div>
 
@@ -506,21 +506,114 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SEO Content Section - Empresas de Mudança */}
+      {/* Rich Content Section for SEO - Cards */}
+      <section className="bg-white/95 backdrop-blur-sm py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 text-center">
+              Tudo Sobre Mudanças no Brasil
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              {/* Card 1 */}
+              <Card className="p-6 md:p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-100 shadow-lg hover:shadow-xl transition-all">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                  Encontre a Melhor Opção para Sua Mudança
+                </h3>
+                <p className="text-gray-700 leading-relaxed text-base md:text-lg" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                  Procurando <strong className="text-gray-900">mudança residencial</strong> ou <strong className="text-gray-900">mudança comercial</strong> confiável? O MudaTech é a plataforma líder para encontrar e comparar transportadoras e empresas especializadas em mudanças em todo o Brasil.
+                </p>
+              </Card>
+
+              {/* Card 2 */}
+              <Card className="p-6 md:p-8 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-100 shadow-lg hover:shadow-xl transition-all">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                  Plataforma Completa e Segura
+                </h3>
+                <p className="text-gray-700 leading-relaxed text-base md:text-lg" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                  Nossa plataforma reúne centenas de transportadoras verificadas, oferecendo uma forma rápida e segura de encontrar a empresa ideal. Seja para <strong className="text-gray-900">mudança residencial</strong>, <strong className="text-gray-900">mudança comercial</strong> ou <strong className="text-gray-900">mudança interestadual</strong>.
+                </p>
+              </Card>
+            </div>
+
+            {/* Card 3 - Full Width */}
+            <Card className="p-6 md:p-8 bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-100 shadow-lg hover:shadow-xl transition-all mb-6">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                Por Que Escolher Transportadoras Verificadas?
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <p className="text-gray-700 leading-relaxed text-base md:text-lg" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                  Ao escolher serviços de mudança através do MudaTech, você trabalha com empresas verificadas que passam por rigoroso processo de avaliação. Todas possuem documentação válida, seguro de carga e equipe qualificada.
+                </p>
+                <p className="text-gray-700 leading-relaxed text-base md:text-lg" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                  Compare preços de diferentes empresas em um único lugar, recebendo orçamentos personalizados. Nossa inteligência artificial analisa suas necessidades e conecta você às opções mais adequadas.
+                </p>
+              </div>
+            </Card>
+
+            {/* Card 4 - Full Width */}
+            <Card className="p-6 md:p-8 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-100 shadow-lg hover:shadow-xl transition-all">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                Tipos de Serviços de Mudança Disponíveis
+              </h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-base" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Mudança Residencial
+                  </h4>
+                  <p className="text-sm text-gray-700" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                    Especializada em mudanças de casas e apartamentos
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-base" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Mudança Comercial
+                  </h4>
+                  <p className="text-sm text-gray-700" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                    Focada em mudanças de escritórios, lojas e estabelecimentos comerciais
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-base" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Mudança Interestadual
+                  </h4>
+                  <p className="text-sm text-gray-700" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                    Experiente em mudanças de longa distância entre estados
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-base" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    Mudança com Embalagem
+                  </h4>
+                  <p className="text-sm text-gray-700" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                    Oferece serviço completo incluindo embalagem e montagem
+                  </p>
+                </div>
+              </div>
+              <p className="mt-6 text-gray-700 text-base leading-relaxed" style={{ fontFamily: 'var(--font-montserrat)' }}>
+                Todas as transportadoras cadastradas são verificadas e possuem avaliações de clientes anteriores, garantindo que você escolha uma empresa confiável com histórico comprovado de qualidade.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Anuncie sua empresa */}
       <section className="bg-white/95 backdrop-blur-sm py-24 md:py-36">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 md:mb-8 text-balance">
-              Anuncie sua empresa
+              Sua Empresa de Mudança Aqui
             </h2>
             <p className="text-lg md:text-xl text-gray-600 mb-8 md:mb-10">
-              Aumente sua visibilidade e receba mais orçamentos de clientes qualificados
+              Aumente sua visibilidade e receba mais orçamentos de clientes qualificados. Cadastre sua empresa de mudança na plataforma líder do Brasil.
             </p>
             <Link href="/orcamento">
               <button
                 className="bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white text-lg md:text-xl px-12 md:px-[60px] py-4 md:py-[25px] rounded-2xl shadow-[0_10px_40px_rgba(102,126,234,0.4)] hover:shadow-[0_15px_50px_rgba(102,126,234,0.6)] hover:scale-110 transition-all duration-300 font-extrabold"
               >
-                📢 Cadastrar Empresa
+                📢 Cadastrar Empresa de Mudança
               </button>
             </Link>
           </div>
@@ -532,7 +625,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-4xl md:text-7xl font-extrabold text-white mb-10 text-balance drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
-              Pronto Para Saber o Valor da Sua Mudança?
+              Pronto Para Calcular o Preço da Sua Mudança?
             </h2>
 
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-block mb-8">
