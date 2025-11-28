@@ -31,6 +31,7 @@ export default function AdminSidebar() {
   const mainMenuItems = [
     { href: '/admin', label: 'Dashboard', icon: '📊' },
     { href: '/admin/hotsites', label: 'Hotsites', icon: '🌐' },
+    { href: '/admin/empresas', label: 'Empresas', icon: '🏢' },
     { href: '/admin/campanhas', label: 'Campanhas', icon: '📢' },
     { href: '/admin/planos', label: 'Planos', icon: '💎' },
     { href: '/admin/cidades', label: 'Cidades', icon: '🌍' },

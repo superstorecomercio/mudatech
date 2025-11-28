@@ -32,13 +32,29 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    const session = await validateSession(token)
+    // Obter informações do dispositivo para validação
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown'
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    
+    const session = await validateSession(token, ipAddress, userAgent)
     
     if (!session.success || !session.admin) {
       return NextResponse.json(
         { error: session.error || 'Sessão inválida' },
         { status: 401 }
       )
+    }
+    
+    // Se o dispositivo mudou, retornar flag para forçar nova verificação
+    if (session.deviceChanged) {
+      return NextResponse.json({
+        success: true,
+        admin: session.admin,
+        deviceChanged: true,
+        message: 'Dispositivo diferente detectado. Nova verificação necessária.'
+      })
     }
     
     return NextResponse.json({

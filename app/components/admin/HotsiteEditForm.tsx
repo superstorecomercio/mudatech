@@ -56,6 +56,21 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
     highlights: hotsite.highlights || [],
   });
 
+  // Estado para dados cadastrais da empresa
+  const empresa = hotsite.empresa || null;
+  const [empresaData, setEmpresaData] = useState({
+    cnpj: empresa?.cnpj || '',
+    razao_social: empresa?.razao_social || '',
+    nome_fantasia: empresa?.nome_fantasia || '',
+    nome_responsavel: empresa?.nome_responsavel || '',
+    email_responsavel: empresa?.email_responsavel || '',
+    telefone_responsavel: empresa?.telefone_responsavel || '',
+    endereco_completo: empresa?.endereco_completo || '',
+    cidade: empresa?.cidade || '',
+    estado: empresa?.estado || '',
+    cep: empresa?.cep || '',
+  });
+
   // Inicializar telefone formatado (pode vir com ou sem formatação do banco)
   const initialPhone = hotsite.telefone1 || '';
   const initialPhoneNumbers = initialPhone.replace(/\D/g, '');
@@ -75,6 +90,23 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
     }
   };
 
+  // Formatação de CNPJ
+  const formatCNPJ = (cnpj: string): string => {
+    const numbers = cnpj.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 5) return `${numbers.slice(0, 2)}.${numbers.slice(2)}`;
+    if (numbers.length <= 8) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`;
+    if (numbers.length <= 12) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`;
+    return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
+  };
+
+  // Formatação de CEP
+  const formatCEP = (cep: string): string => {
+    const numbers = cep.replace(/\D/g, '').slice(0, 8);
+    if (numbers.length <= 5) return numbers;
+    return `${numbers.slice(0, 5)}-${numbers.slice(5)}`;
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError(null);
@@ -91,17 +123,36 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
     try {
       console.log('📤 Enviando atualização do hotsite:', hotsiteData);
 
-      const response = await fetch(`/api/admin/hotsites/${hotsite.id}`, {
+      // Salvar hotsite
+      const hotsiteResponse = await fetch(`/api/admin/hotsites/${hotsite.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(hotsiteData),
       });
 
-      const result = await response.json();
-      console.log('📥 Resposta da API:', { status: response.status, result });
+      const hotsiteResult = await hotsiteResponse.json();
+      console.log('📥 Resposta da API (hotsite):', { status: hotsiteResponse.status, hotsiteResult });
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao salvar hotsite');
+      if (!hotsiteResponse.ok) {
+        throw new Error(hotsiteResult.error || 'Erro ao salvar hotsite');
+      }
+
+      // Se houver empresa vinculada, salvar dados da empresa também
+      if (empresa?.id) {
+        console.log('📤 Enviando atualização da empresa:', empresaData);
+        
+        const empresaResponse = await fetch(`/api/admin/empresas/${empresa.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(empresaData),
+        });
+
+        const empresaResult = await empresaResponse.json();
+        console.log('📥 Resposta da API (empresa):', { status: empresaResponse.status, empresaResult });
+
+        if (!empresaResponse.ok) {
+          console.warn('⚠️ Erro ao salvar empresa, mas hotsite foi salvo:', empresaResult.error);
+        }
       }
 
       setSuccess(true);
@@ -562,6 +613,150 @@ export default function HotsiteEditForm({ hotsite, cidades }: HotsiteEditFormPro
           />
         </div>
       </div>
+
+      {/* Seção de Dados Cadastrais da Empresa */}
+      {empresa && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-6 text-gray-900">Dados Cadastrais da Empresa</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                CNPJ
+              </label>
+              <input
+                type="text"
+                value={formatCNPJ(empresaData.cnpj)}
+                onChange={(e) => {
+                  const numbers = e.target.value.replace(/\D/g, '').slice(0, 14);
+                  setEmpresaData({ ...empresaData, cnpj: numbers });
+                }}
+                placeholder="00.000.000/0000-00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Razão Social
+              </label>
+              <input
+                type="text"
+                value={empresaData.razao_social}
+                onChange={(e) => setEmpresaData({ ...empresaData, razao_social: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome Fantasia
+              </label>
+              <input
+                type="text"
+                value={empresaData.nome_fantasia}
+                onChange={(e) => setEmpresaData({ ...empresaData, nome_fantasia: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome do Responsável
+              </label>
+              <input
+                type="text"
+                value={empresaData.nome_responsavel}
+                onChange={(e) => setEmpresaData({ ...empresaData, nome_responsavel: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email do Responsável
+              </label>
+              <input
+                type="email"
+                value={empresaData.email_responsavel}
+                onChange={(e) => setEmpresaData({ ...empresaData, email_responsavel: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Telefone do Responsável
+              </label>
+              <input
+                type="text"
+                value={formatPhone(empresaData.telefone_responsavel)}
+                onChange={(e) => {
+                  const numbers = e.target.value.replace(/\D/g, '').slice(0, 11);
+                  setEmpresaData({ ...empresaData, telefone_responsavel: numbers });
+                }}
+                placeholder="(11) 98765-4321"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Endereço Completo
+              </label>
+              <textarea
+                value={empresaData.endereco_completo}
+                onChange={(e) => setEmpresaData({ ...empresaData, endereco_completo: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+                placeholder="Rua, número, complemento, bairro..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                CEP
+              </label>
+              <input
+                type="text"
+                value={formatCEP(empresaData.cep)}
+                onChange={(e) => {
+                  const numbers = e.target.value.replace(/\D/g, '').slice(0, 8);
+                  setEmpresaData({ ...empresaData, cep: numbers });
+                }}
+                placeholder="00000-000"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cidade
+              </label>
+              <input
+                type="text"
+                value={empresaData.cidade}
+                onChange={(e) => setEmpresaData({ ...empresaData, cidade: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estado
+              </label>
+              <input
+                type="text"
+                value={empresaData.estado}
+                onChange={(e) => setEmpresaData({ ...empresaData, estado: e.target.value.toUpperCase().slice(0, 2) })}
+                placeholder="SP"
+                maxLength={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#0073e6] focus:border-[#0073e6] uppercase"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Botão de salvar no rodapé (para mobile) */}
       <div className="lg:hidden bg-white rounded-lg shadow-md p-6 sticky bottom-0 z-10 border-t border-gray-200">

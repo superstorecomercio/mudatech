@@ -16,10 +16,13 @@ export default async function HotsiteEditPage({ params }: HotsiteEditPageProps) 
   const { id } = await params;
   const supabase = createAdminClient();
 
-  // Buscar hotsite (sem JOIN com empresas)
+  // Buscar hotsite com dados da empresa
   const { data: hotsite, error: hotsiteError } = await supabase
     .from('hotsites')
-    .select('*')
+    .select(`
+      *,
+      empresa:empresas(*)
+    `)
     .eq('id', id)
     .single();
 

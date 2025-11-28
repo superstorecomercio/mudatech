@@ -12,11 +12,13 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin');
+  const isPainelRoute = pathname?.startsWith('/painel');
   const hideFooter = pathname?.startsWith('/calculadorateste');
   const isCalculadoraTeste = pathname?.startsWith('/calculadorateste');
   const isCalculadoraMudanca = pathname?.startsWith('/calcularmudanca');
 
-  if (isAdminRoute) {
+  // Rotas admin e painel não mostram header/footer
+  if (isAdminRoute || isPainelRoute) {
     return <>{children}</>;
   }
 

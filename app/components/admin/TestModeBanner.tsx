@@ -15,7 +15,7 @@ export default function TestModeBanner() {
         const data = await response.json()
         // API retorna 'active', não 'enabled'
         const isActive = data.active === true || data.enabled === true
-        console.log('🔴 [TestModeBanner] Status:', { data, isActive, loading, dismissed })
+        // Remover log para reduzir spam no terminal
         setIsTestMode(isActive)
       } catch (error) {
         console.error('Erro ao verificar modo de teste:', error)
@@ -25,8 +25,8 @@ export default function TestModeBanner() {
     }
 
     checkTestMode()
-    // Verificar a cada 30 segundos
-    const interval = setInterval(checkTestMode, 30000)
+    // Verificar a cada 5 minutos (reduzir frequência de logs)
+    const interval = setInterval(checkTestMode, 300000)
     
     return () => clearInterval(interval)
   }, [])
@@ -62,25 +62,15 @@ export default function TestModeBanner() {
         return
       }
 
-      const isMobile = window.innerWidth < 1024
       const bannerVisible = isTestMode && !dismissed && !loading
 
       if (bannerVisible) {
         // Banner tem altura fixa de 64px (h-16 = 4rem)
-        if (isMobile) {
-          // Mobile: header (80px = 5rem pt-20) + banner (64px = 4rem) = 144px = 9rem
-          mainContent.style.paddingTop = '9rem'
-        } else {
-          // Desktop: apenas banner (64px = 4rem)
-          mainContent.style.paddingTop = '4rem'
-        }
+        // Header tem 64px (h-16), então precisamos de 64px + 64px = 128px = 8rem (pt-32)
+        mainContent.style.paddingTop = '8rem' // 128px = header (64px) + banner (64px)
       } else {
-        // Resetar para valores padrão do Tailwind
-        if (isMobile) {
-          mainContent.style.paddingTop = '5rem' // pt-20 padrão
-        } else {
-          mainContent.style.paddingTop = '0' // pt-0 padrão
-        }
+        // Resetar para valores padrão: 80px (pt-20) para garantir espaço do header
+        mainContent.style.paddingTop = '5rem' // 80px = espaço suficiente para header
       }
     }
 

@@ -27,7 +27,8 @@ const TIPOS_TEMPLATE = [
   { tipo: 'campanha_vencendo_1dia', nome: 'Campanha Vencendo (1 dia antes)', descricao: 'Enviado 1 dia antes do vencimento' },
   { tipo: 'campanha_vencendo_hoje', nome: 'Campanha Vencendo (Hoje)', descricao: 'Enviado no dia do vencimento' },
   { tipo: 'campanha_ativada', nome: 'Campanha Ativada', descricao: 'Enviado ao ativar uma campanha' },
-  { tipo: 'campanha_desativada', nome: 'Campanha Desativada', descricao: 'Enviado ao desativar uma campanha' }
+  { tipo: 'campanha_desativada', nome: 'Campanha Desativada', descricao: 'Enviado ao desativar uma campanha' },
+  { tipo: 'cliente_credenciais', nome: 'Credenciais de Cliente', descricao: 'Enviado ao cadastrar nova empresa com usuário e senha de acesso' }
 ]
 
 export default function EmailTemplatesPage() {

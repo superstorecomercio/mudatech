@@ -21,8 +21,14 @@ export default function AdminLayout({
   useEffect(() => {
     const checkAuth = async () => {
       // Bypass em desenvolvimento
-      if (process.env.NODE_ENV === 'development' && 
-          process.env.NEXT_PUBLIC_ADMIN_BYPASS_AUTH === 'true') {
+      // Verificar tanto variável de ambiente do servidor quanto do cliente
+      const bypassEnabled = typeof window !== 'undefined' 
+        ? (window as any).__ADMIN_BYPASS__ === 'true' || 
+          localStorage.getItem('admin_bypass') === 'true' ||
+          process.env.NEXT_PUBLIC_ADMIN_BYPASS_AUTH === 'true'
+        : false;
+      
+      if (process.env.NODE_ENV === 'development' && bypassEnabled) {
         setIsAuthenticated(true);
         setAuthChecked(true);
         return;
@@ -51,12 +57,18 @@ export default function AdminLayout({
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
+            // Se o dispositivo mudou, forçar nova verificação
+            if (data.deviceChanged) {
+              console.log('Dispositivo diferente detectado, forçando nova verificação');
+              localStorage.removeItem('admin_session');
+              document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+              router.push('/admin/login?redirect=' + encodeURIComponent(pathname) + '&deviceChanged=true');
+              return;
+            }
+            
             setIsAuthenticated(true);
             setAuthChecked(true);
-            // Garantir que o cookie está salvo
-            if (!document.cookie.includes('admin_session')) {
-              document.cookie = `admin_session=${token}; path=/; max-age=86400; SameSite=Lax`;
-            }
+            // Cookie já é gerenciado pelo servidor, não precisa fazer aqui
           } else {
             localStorage.removeItem('admin_session');
             document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -122,13 +134,10 @@ export default function AdminLayout({
       <AdminSidebar />
       <AdminHeader />
       {/* Main Content - Responsivo */}
+      {/* Header fixo tem 64px (h-16), então precisamos de pelo menos pt-20 (80px) para garantir espaço */}
       <main 
         id="admin-main-content" 
-        className={`lg:ml-64 pt-16 p-4 sm:p-6 lg:p-8 ${
-          testModeActive 
-            ? 'pt-20 lg:pt-24' // Com banner de teste
-            : 'pt-16 lg:pt-16'   // Sem banner
-        }`}
+        className="lg:ml-64 pt-20 lg:pt-20 p-4 sm:p-6 lg:p-8"
       >
         <div className="max-w-7xl mx-auto">
           {children}

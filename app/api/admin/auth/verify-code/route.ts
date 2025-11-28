@@ -34,10 +34,21 @@ export async function POST(request: NextRequest) {
     
     const sessionToken = await createAdminSession(adminId, ipAddress, userAgent)
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token: sessionToken
     })
+    
+    // Salvar cookie com o token
+    response.cookies.set('admin_session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 dias
+      path: '/'
+    })
+    
+    return response
   } catch (error: any) {
     console.error('Erro na verificação de código:', error)
     return NextResponse.json(

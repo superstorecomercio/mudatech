@@ -39,12 +39,12 @@ export async function GET() {
       // Configuração explícita no banco
       active = testModeData.valor.enabled === true
       source = 'database'
-      console.log('📧 [Test Mode Status] Usando configuração do banco:', active)
+      // Remover log para reduzir spam no terminal
     } else {
       // Não há configuração no banco, usar lógica padrão (assíncrona)
       active = await isTestMode()
       source = 'environment'
-      console.log('📧 [Test Mode Status] Usando configuração de ambiente:', active)
+      // Remover log para reduzir spam no terminal
     }
     
     // Atualizar cache com o valor correto

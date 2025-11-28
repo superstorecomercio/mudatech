@@ -62,12 +62,35 @@ export default function HotsiteForm() {
     fetchCidades();
   }, []);
 
+  // Formatação de telefone brasileiro
+  const formatPhone = (phone: string): string => {
+    if (!phone) return '';
+    const numbers = phone.replace(/\D/g, '');
+    if (numbers.length === 0) return '';
+    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 10) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`;
+    }
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Aplicar máscara para campos de telefone
+    if (name === 'telefone1' || name === 'telefone2') {
+      const numbers = value.replace(/\D/g, '');
+      setFormData(prev => ({
+        ...prev,
+        [name]: numbers // Salvar apenas números
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleGerarDescricao = async () => {
@@ -313,11 +336,15 @@ export default function HotsiteForm() {
               type="tel"
               id="telefone1"
               name="telefone1"
-              value={formData.telefone1}
+              value={formatPhone(formData.telefone1)}
               onChange={handleChange}
+              maxLength={15}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="(11) 98765-4321"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Telefone/WhatsApp da empresa (10 ou 11 dígitos)
+            </p>
           </div>
 
           <div>
@@ -328,11 +355,15 @@ export default function HotsiteForm() {
               type="tel"
               id="telefone2"
               name="telefone2"
-              value={formData.telefone2}
+              value={formatPhone(formData.telefone2)}
               onChange={handleChange}
+              maxLength={15}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="(11) 3456-7890"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Telefone secundário (opcional)
+            </p>
           </div>
         </div>
       </div>

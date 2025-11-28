@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:network": "next dev -H 0.0.0.0",
     "dev:turbo": "next dev --turbo",
     "dev:clean": "next dev --turbo=false",
     "build": "next build",

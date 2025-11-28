@@ -22,25 +22,80 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
 
-  // Verificar se já está logado
+  // Verificar se já está logado ao carregar a página
   useEffect(() => {
     const checkAuth = async () => {
-      const storedToken = localStorage.getItem('admin_session')
+      // Bypass em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        const bypassEnabled = 
+          process.env.NEXT_PUBLIC_ADMIN_BYPASS_AUTH === 'true' ||
+          localStorage.getItem('admin_bypass') === 'true';
+        
+        if (bypassEnabled) {
+          // Criar token fake para bypass
+          const fakeToken = 'dev-bypass-token';
+          localStorage.setItem('admin_session', fakeToken);
+          document.cookie = `admin_session=${fakeToken}; path=/; max-age=86400`;
+          router.push('/admin');
+          return;
+        }
+      }
+
+      // Primeiro, verificar cookie (mais confiável - httpOnly)
+      const cookieToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('admin_session='))
+        ?.split('=')[1]
+      
+      const storedToken = localStorage.getItem('admin_session') || cookieToken
+      
       if (storedToken) {
         try {
           const response = await fetch('/api/admin/auth/me', {
             headers: {
               'Authorization': `Bearer ${storedToken}`
-            }
+            },
+            credentials: 'include' // Incluir cookies na requisição
           })
+          
           if (response.ok) {
-            router.push('/admin')
+            const data = await response.json()
+            
+            // Se sessão válida e dispositivo não mudou, redirecionar direto para dashboard
+            if (data.success && !data.deviceChanged) {
+              // Sincronizar localStorage com cookie se necessário
+              if (cookieToken && !localStorage.getItem('admin_session')) {
+                localStorage.setItem('admin_session', cookieToken)
+              }
+              // Redirecionar para dashboard automaticamente
+              router.push('/admin')
+              return
+            }
+            
+            // Se dispositivo mudou, limpar e mostrar mensagem
+            if (data.deviceChanged) {
+              localStorage.removeItem('admin_session')
+              document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+              setError('Dispositivo diferente detectado. Por segurança, é necessário verificar novamente.')
+            }
+          } else {
+            // Sessão inválida, limpar tudo
+            localStorage.removeItem('admin_session')
+            document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
           }
         } catch (err) {
+          console.error('Erro ao verificar autenticação:', err)
           localStorage.removeItem('admin_session')
         }
       }
+      
+      // Verificar se há parâmetro de deviceChanged na URL
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('deviceChanged') === 'true') {
+        setError('Dispositivo diferente detectado. Por segurança, é necessário verificar novamente.')
+      }
     }
+    
     checkAuth()
   }, [router])
 
@@ -64,6 +119,26 @@ export default function AdminLoginPage() {
         return
       }
 
+      // Se skipVerification é true, significa que há sessão válida e já temos o token
+      if (data.skipVerification && data.token) {
+        setToken(data.token)
+        localStorage.setItem('admin_session', data.token)
+        
+        // Se for primeiro login, pedir mudança de senha
+        if (data.primeiroLogin) {
+          setStep({
+            step: 'change-password',
+            adminId: data.adminId,
+            primeiroLogin: true
+          })
+        } else {
+          router.push('/admin')
+        }
+        setLoading(false)
+        return
+      }
+
+      // Se não há sessão válida, pedir código de verificação
       setStep({
         step: 'code',
         adminId: data.adminId,
@@ -101,9 +176,7 @@ export default function AdminLoginPage() {
 
       setToken(data.token)
       localStorage.setItem('admin_session', data.token)
-      
-      // Salvar também em cookie para o middleware
-      document.cookie = `admin_session=${data.token}; path=/; max-age=86400; SameSite=Lax`
+      // Cookie já é salvo pelo servidor, não precisa fazer aqui
 
       // Se for primeiro login, pedir mudança de senha
       if (step.primeiroLogin) {

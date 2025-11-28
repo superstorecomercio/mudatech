@@ -18,10 +18,15 @@ export async function POST(request: NextRequest) {
     
     await deleteSession(token)
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Logout realizado com sucesso'
     })
+    
+    // Remover cookie
+    response.cookies.delete('admin_session')
+    
+    return response
   } catch (error: any) {
     console.error('Erro no logout:', error)
     return NextResponse.json(

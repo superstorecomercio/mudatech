@@ -1,0 +1,35 @@
+{
+  "name": "MudaTech Dashboard",
+  "short_name": "MudaTech",
+  "description": "Plataforma para gerenciar leads e propostas de mudanças",
+  "start_url": "/painel/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/painel/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/painel/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Ver Leads",
+      "short_name": "Leads",
+      "description": "Visualizar leads pendentes",
+      "url": "/painel/dashboard",
+      "icons": [{ "src": "/painel/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
+

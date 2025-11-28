@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdminCredentials, createVerificationCode } from '@/lib/auth/admin-auth'
+import { verifyAdminCredentials, createVerificationCode, findValidSessionByDevice, createAdminSession } from '@/lib/auth/admin-auth'
 import { getEmailConfig } from '@/lib/email/config'
 import { importEmailService } from '@/lib/email/dynamic-import'
 
 /**
  * POST /api/admin/auth/login
- * Primeira etapa: Verifica credenciais e envia código de verificação por email
+ * Verifica credenciais e:
+ * - Se houver sessão válida do mesmo dispositivo: retorna token diretamente
+ * - Se não houver: envia código de verificação por email
  */
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +30,51 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Criar código de verificação
+    // Obter informações do dispositivo
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown'
+    const userAgent = request.headers.get('user-agent') || 'unknown'
+    
+    // Verificar se existe sessão válida do mesmo dispositivo
+    // Melhor prática: Apenas confiar em sessões do mesmo dispositivo (mesmo IP + User-Agent)
+    const existingSession = await findValidSessionByDevice(
+      result.admin.id,
+      ipAddress,
+      userAgent
+    )
+    
+    // Se existe sessão válida do mesmo dispositivo, retornar token diretamente
+    // Isso evita pedir código toda vez no mesmo dispositivo
+    if (existingSession && existingSession.isSameDevice) {
+      console.log('[Auth Login] Sessão válida do mesmo dispositivo encontrada, pulando verificação por código')
+      
+      const response = NextResponse.json({
+        success: true,
+        token: existingSession.token,
+        skipVerification: true,
+        primeiroLogin: result.admin.primeiro_login,
+        message: 'Sessão válida detectada. Acesso concedido.'
+      })
+      
+      // Salvar cookie (atualizar expiração)
+      response.cookies.set('admin_session', existingSession.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7 dias
+        path: '/'
+      })
+      
+      return response
+    }
+    
+    // Se não há sessão do mesmo dispositivo, é um dispositivo novo ou IP diferente
+    // Melhor prática: Sempre pedir código de verificação para dispositivos novos
+    console.log('[Auth Login] Dispositivo novo ou IP diferente detectado, enviando código de verificação')
+    
+    // Se não há sessão válida, criar código de verificação
+    console.log('[Auth Login] Nenhuma sessão válida encontrada, enviando código de verificação')
     const code = await createVerificationCode(result.admin.id)
     
     // Enviar código por email

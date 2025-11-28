@@ -278,12 +278,6 @@ export default function Home() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-8 md:py-32 pt-12 md:pt-16">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Badge: Comparar e Receber Cotações */}
-          <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-white/20 px-3 py-1.5 md:px-4 md:py-2 rounded-full mb-6 md:mb-8 animate-fade-in-up shadow-lg">
-            <Building2 className="w-4 h-4 md:w-4 md:h-4 text-[#667eea]" />
-            <span className="text-sm md:text-sm font-medium text-gray-800">Compare preços e receba cotações de empresas de mudança verificadas</span>
-          </div>
-
           {/* Rating */}
           <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 md:px-6 md:py-3 rounded-full shadow-lg mb-6 md:mb-10 animate-fade-in-up animation-delay-100">
             <div className="flex gap-0.5 md:gap-1">

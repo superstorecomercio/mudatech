@@ -193,6 +193,85 @@ export async function verifyCode(
 }
 
 /**
+ * Normaliza IP para comparação (pega o primeiro IP se for lista)
+ */
+function normalizeIP(ip: string | null | undefined): string {
+  if (!ip || ip === 'unknown') return ''
+  return ip.split(',')[0].trim()
+}
+
+/**
+ * Normaliza User-Agent para comparação (pega os primeiros caracteres significativos)
+ */
+function normalizeUserAgent(ua: string | null | undefined): string {
+  if (!ua || ua === 'unknown') return ''
+  // Pegar os primeiros 150 caracteres que contêm informações importantes do navegador/OS
+  return ua.substring(0, 150).toLowerCase()
+}
+
+/**
+ * Verifica se existe sessão válida do mesmo dispositivo
+ * Melhor prática: Comparar IP e User-Agent para detectar dispositivo confiável
+ */
+export async function findValidSessionByDevice(
+  adminId: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ token: string; expiresAt: Date; isSameDevice: boolean } | null> {
+  const supabase = createAdminClient()
+  
+  // Buscar sessões válidas do mesmo admin (últimas 10)
+  const { data, error } = await supabase
+    .from('admin_sessions')
+    .select('session_token, expires_at, ip_address, user_agent, created_at')
+    .eq('admin_id', adminId)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(10)
+  
+  if (error || !data || data.length === 0) {
+    return null
+  }
+  
+  // Normalizar IP e User-Agent da requisição atual
+  const normalizedIP = normalizeIP(ipAddress)
+  const normalizedUA = normalizeUserAgent(userAgent)
+  
+  // Se não temos informações do dispositivo, não confiar na sessão
+  if (!normalizedIP || !normalizedUA) {
+    return null
+  }
+  
+  // Buscar sessão do mesmo dispositivo (IP e User-Agent correspondem)
+  for (const session of data) {
+    const sessionIP = normalizeIP(session.ip_address)
+    const sessionUA = normalizeUserAgent(session.user_agent)
+    
+    // Comparar IP (deve ser exatamente igual ou pelo menos o primeiro IP da lista)
+    const sameIP = sessionIP === normalizedIP || 
+                   (sessionIP && normalizedIP && sessionIP.split('.')[0] === normalizedIP.split('.')[0])
+    
+    // Comparar User-Agent (deve ser similar - navegador e OS)
+    const sameUA = sessionUA === normalizedUA ||
+                   (sessionUA && normalizedUA && 
+                    sessionUA.substring(0, 100) === normalizedUA.substring(0, 100))
+    
+    // Se IP e User-Agent correspondem, é o mesmo dispositivo
+    if (sameIP && sameUA) {
+      return {
+        token: session.session_token,
+        expiresAt: new Date(session.expires_at),
+        isSameDevice: true
+      }
+    }
+  }
+  
+  // Se não encontrou sessão do mesmo dispositivo, retornar null
+  // Isso força nova verificação por código
+  return null
+}
+
+/**
  * Cria sessão de admin
  */
 export async function createAdminSession(
@@ -203,7 +282,7 @@ export async function createAdminSession(
   const supabase = createAdminClient()
   const token = generateSessionToken()
   const expiresAt = new Date()
-  expiresAt.setHours(expiresAt.getHours() + 24) // Expira em 24 horas
+  expiresAt.setDate(expiresAt.getDate() + 7) // Expira em 7 dias (1 semana)
   
   const { error } = await supabase
     .from('admin_sessions')
@@ -232,8 +311,10 @@ export async function createAdminSession(
  * Valida sessão e retorna dados do admin
  */
 export async function validateSession(
-  token: string
-): Promise<{ success: boolean; admin?: AdminUser; error?: string }> {
+  token: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ success: boolean; admin?: AdminUser; error?: string; deviceChanged?: boolean }> {
   const supabase = createAdminClient()
   
   const { data, error } = await supabase
@@ -242,6 +323,8 @@ export async function validateSession(
       id,
       admin_id,
       expires_at,
+      ip_address,
+      user_agent,
       admins:admin_id (
         id,
         email,
@@ -264,6 +347,19 @@ export async function validateSession(
     return { success: false, error: 'Admin inativo' }
   }
   
+  // Verificar se o dispositivo mudou (se temos IP e User-Agent)
+  let deviceChanged = false
+  if (ipAddress && userAgent && ipAddress !== 'unknown' && userAgent !== 'unknown') {
+    const sessionIP = data.ip_address?.split(',')[0].trim() || ''
+    const requestIP = ipAddress.split(',')[0].trim()
+    const sameIP = sessionIP === requestIP
+    const sameUA = data.user_agent?.substring(0, 100) === userAgent.substring(0, 100)
+    
+    if (!sameIP || !sameUA) {
+      deviceChanged = true
+    }
+  }
+  
   return {
     success: true,
     admin: {
@@ -272,7 +368,8 @@ export async function validateSession(
       nome: admin.nome,
       primeiro_login: admin.primeiro_login,
       ativo: admin.ativo
-    }
+    },
+    deviceChanged
   }
 }
 
